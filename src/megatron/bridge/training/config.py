@@ -612,6 +612,29 @@ class ProfilingConfig:
         )
 
 
+@dataclass(kw_only=True)
+class TensorInspectConfig:
+    """Configuration for NVIDIA DLFw Inspect integration.
+
+    Keep this intentionally minimal and Pythonic to mirror NeMo's callback usage.
+    """
+
+    enabled: bool = False
+    """Enable tensor inspection and statistics collection."""
+
+    features: Optional[dict[str, Any]] = None
+    """Feature configuration as a Python dictionary (same structure as YAML)."""
+
+    feature_dirs: Optional[list[str]] = None
+    """Directories containing feature implementations (searched recursively)."""
+
+    log_dir: Optional[str] = None
+    """Root directory to store inspection logs/statistics. Defaults to checkpoint save dir if unset."""
+
+    init_training_step: int = 0
+    """Initial training step for the inspector (used when resuming)."""
+
+
 @dataclass
 class FaultToleranceConfig:
     """Configuration settings related to fault tolerance mechanisms (NVIDIA internal use)."""
@@ -735,6 +758,7 @@ class ConfigContainer(Container):
     peft: Optional[PEFT] = None
     comm_overlap: Optional[CommOverlapConfig] = None
     mixed_precision: Optional[Union[MixedPrecisionConfig, str]] = None
+    tensor_inspect: Optional[TensorInspectConfig] = None
 
     def get_data_parallel_size(self, world_size: int) -> int:
         """Calculate the data parallel size based on the model configuration."""
