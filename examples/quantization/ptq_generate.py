@@ -16,6 +16,10 @@
 This example demonstrates how to load a quantized Megatron-LM checkpoint
 and perform text generation using the AutoBridge on multiple GPUs.
 
+Prerequisites:
+First, you must run the quantization process to create a quantized checkpoint:
+    torchrun --nproc_per_node 2 examples/models/quantize.py --megatron-save-path ./quantized_megatron_checkpoint --tp 2
+
 The process is as follows:
 1. An AutoBridge is initialized from a pretrained Hugging Face model
     to get the tokenizer and model structure.
@@ -23,7 +27,7 @@ The process is as follows:
 3. Text generation is performed using the loaded quantized model.
 
 Usage:
-torchrun --nproc_per_node 2 examples/models/ptq_generate.py --megatron-load-path ./megatron_checkpoint
+torchrun --nproc_per_node 2 examples/models/ptq_generate.py --megatron-load-path ./quantized_megatron_checkpoint --tp 2
 """
 
 import argparse
@@ -53,7 +57,7 @@ def main(
     pp: int = 1,
     ep: int = 1,
     etp: int = 1,
-    megatron_load_path: str = "./megatron_checkpoint",
+    megatron_load_path: str = "./quantized_megatron_checkpoint",
     prompts: str = "Hello!|Born in California, Soyer trained as a",
     osl: int = 32,
 ) -> None:
@@ -65,7 +69,11 @@ def main(
 
     # Check if the checkpoint path exists
     if not os.path.exists(megatron_load_path):
-        console.print(f"[red]Error: Checkpoint path {megatron_load_path} does not exist![/red]")
+        console.print(f"[red]Error: Quantized checkpoint path {megatron_load_path} does not exist![/red]")
+        console.print("[yellow]Please run the quantization process first:[/yellow]")
+        console.print(
+            f"[yellow]torchrun --nproc_per_node {tp} examples/models/quantize.py --megatron-save-path {megatron_load_path} --tp {tp}[/yellow]"
+        )
         sys.exit(1)
 
     # Initialize bridge from HF model to get tokenizer and model structure
@@ -120,8 +128,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--megatron-load-path",
         type=str,
-        default="./megatron_checkpoint",
-        help="Path to the quantized Megatron checkpoint to load",
+        default="./quantized_megatron_checkpoint",
+        help="Path to the quantized Megatron checkpoint to load (must be created first using quantize.py)",
     )
     parser.add_argument(
         "--prompts",

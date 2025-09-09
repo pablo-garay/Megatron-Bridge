@@ -24,8 +24,8 @@ The process is as follows:
     using the `--megatron-save-path` argument.
 
 Usage:
-torchrun --nproc_per_node 2 examples/models/quantize.py --export-quant-cfg fp8
-torchrun --nproc_per_node 2 examples/models/quantize.py --export-quant-cfg fp8 --megatron-save-path ./megatron_checkpoint
+torchrun --nproc_per_node 2 examples/models/quantize.py --export-quant-cfg fp8 --tp 2
+torchrun --nproc_per_node 2 examples/models/quantize.py --export-quant-cfg fp8 --megatron-save-path ./quantized_megatron_checkpoint --tp 2
 """
 
 import argparse
@@ -160,7 +160,6 @@ def main(
         console.print(f"torchrun --nproc_per_node <gpus> {sys.argv[0]}")
         sys.exit(1)
 
-    os.environ["MEGATRON_USE_TE"] = "false"
     bridge = AutoBridge.from_hf_pretrained(hf_model_id)
 
     model_provider = bridge.to_megatron_provider(load_weights=True)
@@ -169,6 +168,15 @@ def main(
     model_provider.expert_model_parallel_size = ep
     model_provider.expert_tensor_parallel_size = etp
     model_provider.transformer_layer_spec = quantization_layer_spec
+
+    if pp > 1:
+        if not hasattr(model_provider, "params_dtype") or model_provider.params_dtype is None:
+            raise ValueError(
+                "Pipeline parallelism (pp > 1) requires model_provider.params_dtype to be set. "
+                "Please ensure the model provider has a valid params_dtype attribute."
+            )
+        model_provider.pipeline_dtype = model_provider.params_dtype
+
     model_provider.initialize_model_parallel(seed=0)
     megatron_model = model_provider.provide_distributed_model(wrap_with_ddp=False)
 
@@ -250,7 +258,7 @@ def main(
             console.print(f"[yellow]No --megatron-save-path specified. Using default path: {save_path}[/yellow]")
 
     if is_rank_0:
-        console.print(f"Saving quantized Megatron checkpoint in {save_path}...")
+        console.print(f"[green]Saving quantized Megatron checkpoint to: {save_path}[/green]")
     bridge.save_megatron_model(megatron_model, save_path)
 
 
