@@ -614,16 +614,13 @@ class ProfilingConfig:
 
 @dataclass(kw_only=True)
 class TensorInspectConfig:
-    """Configuration for NVIDIA DLFw Inspect integration.
-
-    Keep this intentionally minimal and Pythonic to mirror NeMo's callback usage.
-    """
+    """Configuration for Nvidia-DL-Framework-Inspect integration."""
 
     enabled: bool = False
     """Enable tensor inspection and statistics collection."""
 
-    features: Optional[dict[str, Any]] = None
-    """Feature configuration as a Python dictionary (same structure as YAML)."""
+    features: Optional[Union[dict[str, Any], str, Path]] = None
+    """Feature configuration as a Python dict or a YAML file path."""
 
     feature_dirs: Optional[list[str]] = None
     """Directories containing feature implementations (searched recursively)."""
@@ -633,6 +630,25 @@ class TensorInspectConfig:
 
     init_training_step: int = 0
     """Initial training step for the inspector (used when resuming)."""
+
+
+    def __post_init__(self) -> None:
+        """Populate sensible defaults when inspection is enabled.
+
+        - If feature_dirs is unset, default to the installed TransformerEngine
+          debug features package path (transformer_engine.debug.features), when available.
+        """
+        if not self.enabled:
+            return
+        if not self.feature_dirs:
+            try:
+                import importlib
+                te_features_mod = importlib.import_module("transformer_engine.debug.features")
+                te_features_dir = Path(te_features_mod.__file__).parent
+                if te_features_dir.exists():
+                    self.feature_dirs = [str(te_features_dir)]
+            except Exception:
+                pass
 
 
 @dataclass
