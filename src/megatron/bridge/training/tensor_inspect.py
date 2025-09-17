@@ -13,10 +13,11 @@
 # limitations under the License.
 
 
-from typing import Any
+from typing import Any, Optional
 
 from megatron.bridge.utils.common_utils import print_rank_0
 from megatron.bridge.utils.import_utils import MISSING_NVINSPECT_MSG
+from megatron.bridge.training.config import TensorInspectConfig
 
 
 try:
@@ -31,13 +32,13 @@ except (ImportError, ModuleNotFoundError):
     HAVE_NVINSPECT = False
 
 
-def initialize_tensor_inspect_pre_model(cfg: Any, state: Any) -> None:
+def initialize_tensor_inspect_pre_model(tensor_inspect_config: TensorInspectConfig | None) -> None:
     """Initialize NVIDIA-DL-Framework-Inspect before model construction.
 
     When enabled and the API is unavailable or fails, raise to stop training.
     """
 
-    if cfg.tensor_inspect is None or not cfg.tensor_inspect.enabled:
+    if tensor_inspect_config is None or not tensor_inspect_config.enabled:
         return
 
     if not HAVE_NVINSPECT:
@@ -45,13 +46,12 @@ def initialize_tensor_inspect_pre_model(cfg: Any, state: Any) -> None:
         raise ImportError(MISSING_NVINSPECT_MSG)
 
     try:
-        log_dir = cfg.tensor_inspect.log_dir or cfg.checkpoint.save or "."
         nvinspect_api.initialize(
-            config_file=cfg.tensor_inspect.features or "",
-            feature_dirs=cfg.tensor_inspect.feature_dirs,
-            log_dir=log_dir,
+            config_file=tensor_inspect_config.features or "",
+            feature_dirs=tensor_inspect_config.feature_dirs,
+            log_dir=tensor_inspect_config.log_dir,
             statistics_logger=None,
-            init_training_step=state.train_state.step,
+            init_training_step=tensor_inspect_config.init_training_step,
             default_logging_enabled=True,
         )
         print_rank_0("Initialized NVIDIA-DL-Framework-Inspect (pre-model).")
@@ -61,17 +61,17 @@ def initialize_tensor_inspect_pre_model(cfg: Any, state: Any) -> None:
         raise
 
 
-def _maybe_attach_metric_loggers(state: Any) -> None:
+def _maybe_attach_metric_loggers(tensorboard_logger: Optional[Any], wandb_logger: Optional[Any]) -> None:
     """Attach supported metric loggers (TensorBoard, W&B raw module)."""
 
     try:
         # TensorBoard
-        if state.tensorboard_logger is not None:
-            tb_logger = wrap_tensorboard_writer(state.tensorboard_logger)
+        if tensorboard_logger is not None:
+            tb_logger = wrap_tensorboard_writer(tensorboard_logger)
             MetricLogger.add_logger(tb_logger)
 
         # Raw wandb module (with .log)
-        if state.wandb_logger is not None and hasattr(state.wandb_logger, "log"):
+        if wandb_logger is not None and hasattr(wandb_logger, "log"):
             if BaseLogger is None:
                 return
 
@@ -83,15 +83,21 @@ def _maybe_attach_metric_loggers(state: Any) -> None:
                 def log_scalar(self, name: str, value: float | int, iteration: int, **kwargs):  # type: ignore[override]
                     self._wandb.log({name: value}, step=iteration)
 
-            MetricLogger.add_logger(_WandbModuleLogger(state.wandb_logger))
+            MetricLogger.add_logger(_WandbModuleLogger(wandb_logger))
     except Exception as e:  
         print_rank_0(f"Skipping NVIDIA DLFw Inspect metric logger attach due to error: {e}")
 
 
-def finalize_tensor_inspect_post_model(model: Any, state: Any) -> None:
+def finalize_tensor_inspect_post_model(
+    tensor_inspect_config: TensorInspectConfig | None,
+    model: Any,
+    tensorboard_logger: Optional[Any],
+    wandb_logger: Optional[Any],
+    current_training_step: Optional[int] = None,
+) -> None:
     """Finalize setup after model creation: attach loggers, set names and groups."""
 
-    if state.cfg.tensor_inspect is None or not state.cfg.tensor_inspect.enabled:
+    if tensor_inspect_config is None or not tensor_inspect_config.enabled:
         return
 
     if not HAVE_NVINSPECT:
@@ -101,21 +107,24 @@ def finalize_tensor_inspect_post_model(model: Any, state: Any) -> None:
     try:
         from megatron.core.parallel_state import get_tensor_and_data_parallel_group
 
-        _maybe_attach_metric_loggers(state)
+        _maybe_attach_metric_loggers(tensorboard_logger, wandb_logger)
+
+        # Align nvinspect_api's step count with the resumed training step after checkpoint load
+        if current_training_step is not None:
+            nvinspect_api.initialize_training_step(int(current_training_step))
 
         nvinspect_api.infer_and_assign_layer_names(model)
         nvinspect_api.set_tensor_reduction_group(get_tensor_and_data_parallel_group())
         print_rank_0("Finalized NVIDIA DLFw Inspect (post-model).")
     except Exception as e:
-        # Treat post-model finalize failures as fatal when enabled so training exits
         print_rank_0(f"NVIDIA DLFw Inspect post-init failed: {e}")
         raise
 
 
-def tensor_inspect_step_if_enabled(cfg: Any) -> None:
+def tensor_inspect_step_if_enabled(tensor_inspect_config: TensorInspectConfig | None) -> None:
     """Advance DLFw Inspect step if enabled."""
 
-    if cfg.tensor_inspect is None or not cfg.tensor_inspect.enabled:
+    if tensor_inspect_config is None or not tensor_inspect_config.enabled:
         return
     if not HAVE_NVINSPECT:
         print_rank_0(MISSING_NVINSPECT_MSG)
@@ -127,10 +136,10 @@ def tensor_inspect_step_if_enabled(cfg: Any) -> None:
         raise
 
 
-def tensor_inspect_end_if_enabled(cfg: Any) -> None:
+def tensor_inspect_end_if_enabled(tensor_inspect_config: TensorInspectConfig | None) -> None:
     """Shutdown DLFw Inspect if enabled."""
 
-    if cfg.tensor_inspect is None or not cfg.tensor_inspect.enabled:
+    if tensor_inspect_config is None or not tensor_inspect_config.enabled:
         return
     if not HAVE_NVINSPECT:
         return

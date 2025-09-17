@@ -181,8 +181,8 @@ def setup(
     timers("tokenizer-setup").stop()
     barrier_and_log("after tokenizer is built")
 
-    # Initialize NVIDIA DLFw Inspect early (before TE modules are constructed)
-    initialize_tensor_inspect_pre_model(cfg, state)
+    # Initialize NVIDIA DLFw Inspect early (this must happen before TE modules are constructed)
+    initialize_tensor_inspect_pre_model(cfg.tensor_inspect)
 
     # Model, optimizer, and learning rate.
     timers("model-and-optimizer-setup", log_level=0).start(barrier=True)
@@ -234,8 +234,14 @@ def setup(
         timers("load-checkpoint").stop(barrier=True)
         timers.log(["load-checkpoint"])
 
-    # Finalize NVIDIA DLFw Inspect after model is built (attach loggers, names, groups)
-    finalize_tensor_inspect_post_model(model, state)
+    # Finalize NVIDIA DLFw Inspect after model is built (attach loggers, module names, parallelism groups)
+    finalize_tensor_inspect_post_model(
+        cfg.tensor_inspect,
+        model,
+        state.tensorboard_logger,
+        state.wandb_logger,
+        current_training_step=state.train_state.step,
+    )
 
     _update_model_config_funcs(
         model,

@@ -272,7 +272,7 @@ def train(
         fault_tolerance.on_training_step_end(global_state)
 
         # Advance NVIDIA DLFw Inspect step if enabled
-        tensor_inspect_step_if_enabled(config)
+        tensor_inspect_step_if_enabled(config.tensor_inspect)
         if should_checkpoint:
             save_checkpoint_and_time(
                 global_state,
@@ -448,7 +448,7 @@ def train(
     # If any exit conditions (signal handler, duration, iterations) have been reached, exit.
     if should_exit:
         # Close NVIDIA DLFw Inspect if enabled
-        tensor_inspect_end_if_enabled(config)
+        tensor_inspect_end_if_enabled(config.tensor_inspect)
         maybe_finalize_async_save(global_state=global_state, ckpt_cfg=config.checkpoint, blocking=True, terminate=True)
         wandb_writer = global_state.wandb_logger
         if wandb_writer:
@@ -457,7 +457,7 @@ def train(
         sys.exit(exit_code)
 
     # Close NVIDIA DLFw Inspect at clean finish
-    tensor_inspect_end_if_enabled(config)
+    tensor_inspect_end_if_enabled(config.tensor_inspect)
 
 
 def train_step(

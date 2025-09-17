@@ -865,6 +865,13 @@ class ConfigContainer(Container):
                 "async_save is only supported with ckpt_format='torch_dist'"
             )
 
+        # Set defaults for tensor inspect callback
+        if self.tensor_inspect is not None and self.tensor_inspect.enabled:
+            if self.tensor_inspect.log_dir is None:
+                self.tensor_inspect.log_dir = self.checkpoint.save or "."
+            if self.tensor_inspect.init_training_step == 0 and self.checkpoint.ckpt_step is not None:
+                self.tensor_inspect.init_training_step = int(self.checkpoint.ckpt_step)
+
         # Set data_parallel_size on comm_overlap config if present
         if self.comm_overlap is not None:
             self.comm_overlap.data_parallel_size = self.data_parallel_size
