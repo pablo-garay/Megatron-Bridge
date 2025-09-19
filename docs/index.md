@@ -8,6 +8,7 @@
 
 bridge-guide.md
 performance-guide.md
+recipe-usage.md
 ```
 
 ```{toctree}
