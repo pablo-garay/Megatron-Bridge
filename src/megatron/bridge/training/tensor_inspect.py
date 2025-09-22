@@ -15,6 +15,8 @@
 
 from typing import Any, Optional
 
+from megatron.core.transformer import MegatronModule
+
 from megatron.bridge.utils.common_utils import print_rank_0
 from megatron.bridge.utils.import_utils import MISSING_NVINSPECT_MSG
 from megatron.bridge.training.config import TensorInspectConfig
@@ -32,7 +34,7 @@ except (ImportError, ModuleNotFoundError):
     HAVE_NVINSPECT = False
 
 
-def initialize_tensor_inspect_pre_model(tensor_inspect_config: TensorInspectConfig | None) -> None:
+def initialize_tensor_inspect_pre_model_initialization(tensor_inspect_config: TensorInspectConfig | None) -> None:
     """Initialize NVIDIA-DL-Framework-Inspect before model construction.
 
     When enabled and the API is unavailable or fails, raise to stop training.
@@ -88,9 +90,9 @@ def _maybe_attach_metric_loggers(tensorboard_logger: Optional[Any], wandb_logger
         print_rank_0(f"Skipping NVIDIA DLFw Inspect metric logger attach due to error: {e}")
 
 
-def finalize_tensor_inspect_post_model(
+def finalize_tensor_inspect_post_model_initialization(
     tensor_inspect_config: TensorInspectConfig | None,
-    model: Any,
+    model: list[MegatronModule],
     tensorboard_logger: Optional[Any],
     wandb_logger: Optional[Any],
     current_training_step: Optional[int] = None,
