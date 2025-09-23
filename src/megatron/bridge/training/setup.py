@@ -46,8 +46,8 @@ from megatron.bridge.training.tokenizers.tokenizer import build_tokenizer
 from megatron.bridge.training.utils.log_utils import append_to_progress_log, barrier_and_log, setup_logging
 from megatron.bridge.utils.common_utils import print_rank_0, get_rank_safe
 from megatron.bridge.training.tensor_inspect import (
-    finalize_tensor_inspect_post_model,
-    initialize_tensor_inspect_pre_model,
+    finalize_tensor_inspect_post_model_initialization,
+    initialize_tensor_inspect_pre_model_initialization,
 )
 
 class SetupOutput(NamedTuple):
@@ -182,7 +182,9 @@ def setup(
     barrier_and_log("after tokenizer is built")
 
     # Initialize NVIDIA DLFw Inspect early (this must happen before TE modules are constructed)
-    initialize_tensor_inspect_pre_model(cfg.tensor_inspect)
+    if cfg.tensor_inspect is not None:
+        cfg.tensor_inspect.finalize()
+    initialize_tensor_inspect_pre_model_initialization(cfg.tensor_inspect)
 
     # Model, optimizer, and learning rate.
     timers("model-and-optimizer-setup", log_level=0).start(barrier=True)
@@ -235,7 +237,7 @@ def setup(
         timers.log(["load-checkpoint"])
 
     # Finalize NVIDIA DLFw Inspect after model is built (attach loggers, module names, parallelism groups)
-    finalize_tensor_inspect_post_model(
+    finalize_tensor_inspect_post_model_initialization(
         cfg.tensor_inspect,
         model,
         state.tensorboard_logger,

@@ -650,7 +650,7 @@ class TensorInspectConfig:
     """Initial training step for the inspector (used when resuming)."""
 
 
-    def __post_init__(self) -> None:
+    def finalize(self) -> None:
         """Populate sensible defaults when inspection is enabled.
 
         - If feature_dirs is unset, default to the installed TransformerEngine
