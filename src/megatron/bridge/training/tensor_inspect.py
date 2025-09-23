@@ -18,9 +18,11 @@ from typing import Any, Optional
 from megatron.core.transformer import MegatronModule
 
 from megatron.bridge.utils.common_utils import print_rank_0
-from megatron.bridge.utils.import_utils import MISSING_NVINSPECT_MSG
 from megatron.bridge.training.config import TensorInspectConfig
 
+MISSING_NVINSPECT_MSG = (
+    "nvdlfw_inspect is not available. Please install it with `pip install nvdlfw-inspect`."
+)
 
 try:
     import nvdlfw_inspect.api as nvinspect_api

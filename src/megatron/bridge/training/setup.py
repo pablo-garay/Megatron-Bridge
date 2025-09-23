@@ -166,8 +166,6 @@ def setup(
     barrier_and_log("after tokenizer is built")
 
     # Initialize NVIDIA DLFw Inspect early (this must happen before TE modules are constructed)
-    if cfg.tensor_inspect is not None:
-        cfg.tensor_inspect.finalize()
     initialize_tensor_inspect_pre_model_initialization(cfg.tensor_inspect)
 
     # Model, optimizer, and learning rate.

@@ -1002,6 +1002,8 @@ class ConfigContainer(Container):
             self.profiling.finalize()
         if self.nvrx_straggler is not None:
             self.nvrx_straggler.finalize()
+        if self.tensor_inspect is not None:
+            self.tensor_inspect.finalize()
 
         # Re-run post-inits of sub-configs
         for f in fields(self):
