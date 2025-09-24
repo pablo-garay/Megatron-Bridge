@@ -69,9 +69,6 @@ if __name__ == "__main__":
         if HAS_NEMO_RUN
         else []
     )
-    if HAS_NEMO_RUN and args.enable_nsys:
-        plugins.append(NsysPlugin(profile_step_start=10, profile_step_end=11))
-
     custom_mounts = args.custom_mounts + [
         f"{config_filepath}:{config_filepath}",
         f"{RUN_SCRIPT_PATH}:{RUN_SCRIPT_PATH}",
@@ -86,6 +83,14 @@ if __name__ == "__main__":
         num_gpus_per_node = preset.get("num_gpus_per_node", args.gpus_per_node)
 
     num_nodes = -(args.num_gpus // -num_gpus_per_node)
+
+    if HAS_NEMO_RUN and args.enable_nsys:
+        profile_cfg = yaml_overrides_omega["ConfigContainer"]["profiling"]
+        start_step = profile_cfg["profile_step_start"]
+        end_step = profile_cfg["profile_step_end"]
+        ranks = list(range(num_nodes * args.gpus_per_node))
+        plugins.append(NsysPlugin(profile_step_start=start_step, profile_step_end=end_step, profile_ranks=ranks))
+
     executor = slurm_executor(
         args.gpu.lower(),
         args.account,
@@ -120,9 +125,6 @@ if __name__ == "__main__":
         entrypoint="python",
         args=target_script_args,
     )
-
-    exp_name = f"{args.model_name}_{args.model_size}_{args.domain}_{args.task}"
-    exp_name += "_bf16" if args.compute_dtype == "bf16" else f"_{args.compute_dtype}_{args.fp8_recipe}"
 
     # workaround: update the experiment name to align LLMB naming convention
     train_config =  yaml_overrides_omega["perf_matrix"][args.gpu][f"num_gpus_{args.num_gpus}"]["common"]
