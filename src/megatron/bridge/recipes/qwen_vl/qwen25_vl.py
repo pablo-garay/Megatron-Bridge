@@ -247,7 +247,7 @@ def _qwen25_vl_common(
         dataset_cfg = HFDatasetConversationProvider(
             sequence_length=seq_length,
             hf_processor_path=_processor_model,
-            maker_name="make_rdr_dataset",
+            maker_name="make_medpix_dataset",
             num_workers=2,
             dataloader_type="single",
             data_sharding=True,

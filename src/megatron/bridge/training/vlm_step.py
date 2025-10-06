@@ -182,7 +182,7 @@ def get_batch(
         if batch.get("attention_mask") is not None:
             batch["attention_mask"] = pad_or_truncate_attn_to_len(batch.get("attention_mask"), seq_len, seq_len)  # type: ignore[assignment]
     else:
-        # No PP: pad sequence length to nearest multiple of 64 for efficiency (capped at model seq_length)
+        # No PP: pad sequence length to nearest multiple of 128 for efficiency (capped at model seq_length)
         seq_cap = cfg.model.seq_length
 
         def _ceil_to_mult(n: int, mult: int) -> int:
