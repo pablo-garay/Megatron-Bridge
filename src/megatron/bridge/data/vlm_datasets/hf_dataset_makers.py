@@ -89,7 +89,7 @@ def make_cord_v2_dataset(
 
 
 def make_medpix_dataset(
-    path_or_dataset: str = "medpix-dataset/medpix-dataset", split: str = "train", **kwargs
+    path_or_dataset: str = "mmoukouba/MedPix-VQA", split: str = "train", **kwargs
 ) -> List[Dict[str, Any]]:
     """Load and preprocess the MedPix dataset for image-to-text fine-tuning."""
     dataset = load_dataset(path_or_dataset, split=split)

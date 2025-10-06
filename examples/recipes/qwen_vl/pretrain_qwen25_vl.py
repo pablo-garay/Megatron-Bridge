@@ -41,7 +41,7 @@ from typing import Tuple
 from omegaconf import OmegaConf
 
 from megatron.bridge.recipes.qwen_vl.qwen25_vl import pretrain_config
-from megatron.bridge.recipes.qwen_vl.qwen25_vl_step import forward_step
+from megatron.bridge.training.vlm_step import forward_step
 from megatron.bridge.training.config import ConfigContainer
 from megatron.bridge.training.pretrain import pretrain
 from megatron.bridge.training.utils.omegaconf_utils import (
@@ -84,6 +84,16 @@ def parse_cli_args() -> Tuple[argparse.Namespace, list[str]]:
         help="Optional root for resolving relative image/video paths in dataset records.",
     )
     parser.add_argument(
+        "--dataset-type",
+        type=str,
+        choices=["mock", "preloaded", "hf"],
+        default=None,
+        help=(
+            "Dataset type to use: 'mock', 'preloaded', or 'hf'. "
+            "If not set, auto-detects based on --data-path/--use-preloaded."
+        ),
+    )
+    parser.add_argument(
         "--use-preloaded",
         action="store_true",
         help="Use preloaded dataset provider (enabled automatically when --data-path is set).",
@@ -99,9 +109,9 @@ def main() -> None:
     logger.info("Megatron-Bridge Qwen2.5-VL Pretraining Script with YAML & CLI Overrides")
     logger.info("-----------------------------------------------------------------------")
 
-    # Determine dataset type based on CLI flags
-    use_preloaded_flag = bool(args.data_path) or bool(args.use_preloaded)
-    dataset_type = "preloaded" if use_preloaded_flag else "mock"
+    # Determine dataset type based on CLI flag (overrides) or fall back to auto-detect
+    use_preloaded_flag = bool(args.data_path) or bool(getattr(args, "use_preloaded", False))
+    dataset_type = args.dataset_type or ("preloaded" if use_preloaded_flag else "mock")
 
     cfg: ConfigContainer = pretrain_config(
         dataset_type=dataset_type,

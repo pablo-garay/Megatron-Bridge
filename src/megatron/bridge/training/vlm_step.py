@@ -14,10 +14,10 @@
 
 import logging
 from functools import partial
-from typing import Iterable
+from typing import Iterable, Optional
+from dataclasses import dataclass, fields
 
 import torch
-import torch.nn.functional as F
 from megatron.core import parallel_state
 from megatron.core.models.gpt import GPTModel
 from megatron.core.utils import get_batch_on_this_cp_rank, get_model_config
@@ -26,6 +26,53 @@ from megatron.bridge.training.config import ConfigContainer
 from megatron.bridge.training.state import GlobalState
 from megatron.bridge.training.utils.loss_utils import create_loss_function as _create_loss_function
 from megatron.bridge.training.utils.packed_seq_utils import get_packed_seq_params
+from megatron.bridge.training.utils.padding_utils import (
+    pad_or_truncate_2d_to_len,
+    pad_or_truncate_pos_to_len,
+    pad_or_truncate_attn_to_len,
+)
+ 
+@dataclass
+class VisualInputs:
+    """Container for optional visual modality tensors.
+
+    New modalities can be added as optional fields. Downstream code should
+    query available, non-None entries via as_model_kwargs().
+    """
+
+    # Image tensors, e.g., Qwen2.5-VL processor output.
+    pixel_values: Optional[torch.Tensor] = None
+
+    # Per-image temporal/spatial grid metadata (T, H, W) for videos, Qwen2.5-VL processor output.
+    image_grid_thw: Optional[torch.Tensor] = None
+
+    def as_model_kwargs(self) -> dict[str, torch.Tensor]:
+        """Return a mapping of non-None fields suitable for model forward kwargs."""
+        result: dict[str, torch.Tensor] = {}
+        for f in fields(self):
+            value = getattr(self, f.name)
+            if value is not None:
+                result[f.name] = value
+        return result
+
+    def normalized_for_model(self) -> dict[str, torch.Tensor]:
+        """Return non-None fields with shapes normalized for common expectations.
+
+        - pixel_values: [B, N, C, H, W] -> [B*N, C, H, W]
+        - image_grid_thw: [B, N, 3] -> [B*N, 3]
+        """
+        kwargs = self.as_model_kwargs()
+
+        pixel_values = kwargs.get("pixel_values")
+        if isinstance(pixel_values, torch.Tensor) and pixel_values.dim() == 5:
+            b, n, c, h, w = pixel_values.shape
+            kwargs["pixel_values"] = pixel_values.view(b * n, c, h, w)
+
+        image_grid_thw = kwargs.get("image_grid_thw")
+        if isinstance(image_grid_thw, torch.Tensor) and image_grid_thw.dim() == 3:
+            kwargs["image_grid_thw"] = image_grid_thw.view(-1, image_grid_thw.size(-1))
+
+        return kwargs
 
 
 logger = logging.getLogger(__name__)
@@ -53,11 +100,10 @@ def get_batch_from_iterator(
 
     if not skip_getting_attention_mask_from_dataset:
         required_device_keys.add("attention_mask")
-    # Optionally include vision inputs if present in the batch
-    if "pixel_values" in batch:
-        required_device_keys.add("pixel_values")
-    if "image_grid_thw" in batch:
-        required_device_keys.add("image_grid_thw")
+    # Optionally include visual inputs if present in the batch
+    for key in VisualInputs().__dict__.keys():
+        if key in batch:
+            required_device_keys.add(key)
 
     if "cu_seqlens" in batch:
         required_device_keys.add("cu_seqlens")
@@ -91,8 +137,7 @@ def get_batch(
     torch.Tensor,
     torch.Tensor,
     torch.Tensor,
-    torch.Tensor | None,
-    torch.Tensor | None,
+    Optional[VisualInputs],
 ]:
     """Generate a batch.
 
@@ -103,10 +148,10 @@ def get_batch(
 
     Returns:
         tuple of tensors containing tokens, labels, loss_mask, attention_mask, position_ids,
-        cu_seqlens, cu_seqlens_argmin, max_seqlen, pixel_values (optional), image_grid_thw (optional)
+        cu_seqlens, cu_seqlens_argmin, max_seqlen, visual_inputs (container of optional modalities)
     """
     if (not parallel_state.is_pipeline_first_stage()) and (not parallel_state.is_pipeline_last_stage()):
-        return None, None, None, None, None, None, None, None
+        return None, None, None, None, None, None, None, None, None
 
     batch = get_batch_from_iterator(
         data_iterator,
@@ -114,76 +159,28 @@ def get_batch(
         getattr(cfg.dataset, "skip_getting_attention_mask_from_dataset", True),
     )
 
-    # Keep optional vision tensors aside to avoid being dropped by CP slicing util
-    pixel_values = batch.get("pixel_values")
-    image_grid_thw = batch.get("image_grid_thw")
-
-    # slice batch along sequence dimension for context parallelism
-    batch = get_batch_on_this_cp_rank(batch)
-    if pixel_values is not None:
-        batch["pixel_values"] = pixel_values
-    if image_grid_thw is not None:
-        batch["image_grid_thw"] = image_grid_thw
-
-    # Helpers to pad/truncate to a desired target length with an upper cap
-    def _pad_or_truncate_2d_to_len(
-        x: torch.Tensor | None, target_len: int, max_cap: int, pad_value: int | float
-    ) -> torch.Tensor | None:
-        if x is None:
-            return None
-        cur = x.size(1)
-        if cur < target_len:
-            return F.pad(x, (0, target_len - cur), value=pad_value)
-        if cur > max_cap:
-            return x[:, :max_cap]
-        return x
-
-    def _pad_or_truncate_pos_to_len(
-        pos: torch.Tensor | None, target_len: int, max_cap: int
-    ) -> torch.Tensor | None:
-        if pos is None:
-            return None
-        cur = pos.size(1)
-        if cur < target_len:
-            add = (
-                torch.arange(cur, target_len, device=pos.device, dtype=pos.dtype)
-                .unsqueeze(0)
-                .expand(pos.size(0), -1)
-            )
-            return torch.cat([pos, add], dim=1)
-        if cur > max_cap:
-            return pos[:, :max_cap]
-        return pos
-
-    def _pad_or_truncate_attn_to_len(
-        mask: torch.Tensor | None, target_len: int, max_cap: int
-    ) -> torch.Tensor | None:
-        if mask is None:
-            return None
-        # Expected shape (B, 1, S, S)
-        b, h, s1, s2 = mask.shape
-        pad_val = False if mask.dtype == torch.bool else 0
-        if s1 < target_len:
-            return F.pad(mask, (0, target_len - s2, 0, target_len - s1), value=pad_val)
-        if s1 > max_cap:
-            return mask[:, :, :max_cap, :max_cap]
-        return mask
+    # Slice only text tensors for context parallelism
+    cp_keys = ("tokens", "input_ids", "labels", "loss_mask", "attention_mask", "position_ids")
+    cp_slice = {k: batch.get(k) for k in cp_keys if k in batch}
+    cp_slice = get_batch_on_this_cp_rank(cp_slice)
+    for k, v in cp_slice.items():
+        batch[k] = v
 
     # When using pipeline parallelism, ensure fixed shapes equal to cfg.model.seq_length
     if getattr(cfg.model, "pipeline_model_parallel_size", 1) > 1:
         seq_len = cfg.model.seq_length
 
         tokens_or_input = batch.get("tokens") if batch.get("tokens") is not None else batch.get("input_ids")
-        tokens_or_input = _pad_or_truncate_2d_to_len(tokens_or_input, seq_len, seq_len, pad_value=0)
+        tokens_or_input = pad_or_truncate_2d_to_len(tokens_or_input, seq_len, seq_len, pad_value=0)
         if batch.get("tokens") is not None:
             batch["tokens"] = tokens_or_input  # type: ignore[assignment]
         else:
             batch["input_ids"] = tokens_or_input  # type: ignore[assignment]
-        batch["labels"] = _pad_or_truncate_2d_to_len(batch.get("labels"), seq_len, seq_len, pad_value=-100)  # type: ignore[assignment]
-        batch["loss_mask"] = _pad_or_truncate_2d_to_len(batch.get("loss_mask"), seq_len, seq_len, pad_value=0)  # type: ignore[assignment]
-        batch["position_ids"] = _pad_or_truncate_pos_to_len(batch.get("position_ids"), seq_len, seq_len)  # type: ignore[assignment]
+        batch["labels"] = pad_or_truncate_2d_to_len(batch.get("labels"), seq_len, seq_len, pad_value=-100)  # type: ignore[assignment]
+        batch["loss_mask"] = pad_or_truncate_2d_to_len(batch.get("loss_mask"), seq_len, seq_len, pad_value=0)  # type: ignore[assignment]
+        batch["position_ids"] = pad_or_truncate_pos_to_len(batch.get("position_ids"), seq_len, seq_len)  # type: ignore[assignment]
         if batch.get("attention_mask") is not None:
-            batch["attention_mask"] = _pad_or_truncate_attn_to_len(batch.get("attention_mask"), seq_len, seq_len)  # type: ignore[assignment]
+            batch["attention_mask"] = pad_or_truncate_attn_to_len(batch.get("attention_mask"), seq_len, seq_len)  # type: ignore[assignment]
     else:
         # No PP: pad sequence length to nearest multiple of 64 for efficiency (capped at model seq_length)
         seq_cap = cfg.model.seq_length
@@ -194,30 +191,34 @@ def get_batch(
         tokens_or_input = batch.get("tokens") if batch.get("tokens") is not None else batch.get("input_ids")
         if tokens_or_input is not None:
             cur_len = tokens_or_input.size(1)
-            target_len = min(seq_cap, _ceil_to_mult(cur_len, 64))
+            target_len = min(seq_cap, _ceil_to_mult(cur_len, 128))
 
             # tokens/input_ids
-            padded_tokens = _pad_or_truncate_2d_to_len(tokens_or_input, target_len, seq_cap, pad_value=0)
+            padded_tokens = pad_or_truncate_2d_to_len(tokens_or_input, target_len, seq_cap, pad_value=0)
             if batch.get("tokens") is not None:
                 batch["tokens"] = padded_tokens  # type: ignore[assignment]
             else:
                 batch["input_ids"] = padded_tokens  # type: ignore[assignment]
 
             # labels and loss mask
-            batch["labels"] = _pad_or_truncate_2d_to_len(batch.get("labels"), target_len, seq_cap, pad_value=-100)  # type: ignore[assignment]
-            batch["loss_mask"] = _pad_or_truncate_2d_to_len(batch.get("loss_mask"), target_len, seq_cap, pad_value=0)  # type: ignore[assignment]
+            batch["labels"] = pad_or_truncate_2d_to_len(batch.get("labels"), target_len, seq_cap, pad_value=-100)  # type: ignore[assignment]
+            batch["loss_mask"] = pad_or_truncate_2d_to_len(batch.get("loss_mask"), target_len, seq_cap, pad_value=0)  # type: ignore[assignment]
 
             # position_ids: extend with increasing positions
             pos = batch.get("position_ids")
-            pos = _pad_or_truncate_pos_to_len(pos, target_len, seq_cap)
+            pos = pad_or_truncate_pos_to_len(pos, target_len, seq_cap)
             if pos is not None:
                 batch["position_ids"] = pos  # type: ignore[assignment]
 
             # attention_mask if present
             attn = batch.get("attention_mask")
-            if attn is not None:
-                attn = _pad_or_truncate_attn_to_len(attn, target_len, seq_cap)
-                batch["attention_mask"] = attn  # type: ignore[assignment]
+        if attn is not None:
+            attn = pad_or_truncate_attn_to_len(attn, target_len, seq_cap)
+            batch["attention_mask"] = attn  # type: ignore[assignment]
+
+    visual_inputs = VisualInputs(
+        **{k: batch.get(k) for k in VisualInputs().__dict__.keys()}  # type: ignore[arg-type]
+    )
 
     return (
         (batch.get("tokens") if batch.get("tokens") is not None else batch.get("input_ids")),
@@ -228,8 +229,7 @@ def get_batch(
         batch.get("cu_seqlens"),
         batch.get("cu_seqlens_argmin"),
         batch.get("max_seqlen"),
-        batch.get("pixel_values"),
-        batch.get("image_grid_thw"),
+        visual_inputs,
     )
 
 
@@ -264,8 +264,7 @@ def forward_step(
             cu_seqlens,
             cu_seqlens_argmin,
             max_seqlen,
-            pixel_values,
-            image_grid_thw,
+            visual_inputs,
         ) = get_batch(data_iterator, state.cfg, use_mtp)
     timers("batch-generator").stop()
 
@@ -275,18 +274,9 @@ def forward_step(
         "attention_mask": attention_mask,
         "labels": labels,
     }
-    # Add optional vision inputs if available
-    if pixel_values is not None:
-        # Flatten possible [batch, num_images, C, H, W] -> [num_images_total, C, H, W]
-        if pixel_values.dim() == 5:
-            b, n, c, h, w = pixel_values.shape
-            pixel_values = pixel_values.view(b * n, c, h, w)
-        forward_args["pixel_values"] = pixel_values
-    if image_grid_thw is not None:
-        # Flatten possible [batch, num_images, 3] -> [num_images_total, 3]
-        if image_grid_thw.dim() == 3:
-            image_grid_thw = image_grid_thw.view(-1, image_grid_thw.size(-1))
-        forward_args["image_grid_thw"] = image_grid_thw
+    # Add optional visual inputs if available
+    if visual_inputs is not None:
+        forward_args.update(visual_inputs.normalized_for_model())
 
     # Add packed sequence support
     if cu_seqlens is not None:

@@ -23,7 +23,7 @@ Public API re-exports:
 
 from .collate import COLLATE_FNS, default_collate_fn, phi4_mm_collate_fn, qwen2_5_collate_fn
 from .dataset_provider import HFDatasetConversationProvider, VLMConversationDataset
-from .makers import (
+from .hf_dataset_makers import (
     make_cord_v2_dataset,
     make_cv17_dataset,
     make_medpix_dataset,
