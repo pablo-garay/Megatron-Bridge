@@ -805,8 +805,6 @@ class MegatronModelBridge(Generic[HFPreTrained, ModelProviderTarget, MegatronMod
         self,
         hf_pretrained: HFPreTrained,
         megatron_model: List[MegatronModel],
-        *,
-        strict: bool = False,
     ) -> List[None | WeightConversionTask]:
         """Construct the conversion tasks between HF and megatron.
 
@@ -858,16 +856,15 @@ class MegatronModelBridge(Generic[HFPreTrained, ModelProviderTarget, MegatronMod
                     continue
 
                 # ensure hf weights exist
-                if strict:
-                    if isinstance(mapping.hf_param, str):
-                        if mapping.hf_param not in hf_keys:
-                            logger.warning(f"WARNING: Can't find {mapping.hf_param} in hf_keys")
-                            continue
-                    else:
-                        missing_params = [hf_param for hf_param in mapping.hf_param.values() if hf_param not in hf_keys]
-                        if missing_params:
-                            logger.warning(f"WARNING: Can't find the following HF parameters in hf_keys: {missing_params}")
-                            continue
+                if isinstance(mapping.hf_param, str):
+                    if mapping.hf_param not in hf_keys:
+                        logger.warning(f"WARNING: Can't find {mapping.hf_param} in hf_keys")
+                        continue
+                else:
+                    missing_params = [hf_param for hf_param in mapping.hf_param.values() if hf_param not in hf_keys]
+                    if missing_params:
+                        logger.warning(f"WARNING: Can't find the following HF parameters in hf_keys: {missing_params}")
+                        continue
 
                 local_module, local_weights = get_module_and_param_from_name(megatron_model, local_name, vp_stage)
 

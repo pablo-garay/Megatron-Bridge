@@ -144,7 +144,6 @@ def export_megatron_to_hf(
     hf_path: str,
     show_progress: bool = True,
     quantized: bool = False,
-    strict: bool = False,
 ) -> None:
     """
     Export a Megatron checkpoint to HuggingFace format.
@@ -189,7 +188,6 @@ def export_megatron_to_hf(
         hf_path=hf_path,
         show_progress=show_progress,
         quantized=quantized,
-        strict=strict,
     )
 
     print(f"✅ Successfully exported model to: {hf_path}")
@@ -240,7 +238,6 @@ def main():
     )
     export_parser.add_argument("--no-progress", action="store_true", help="Disable progress bar during export")
     export_parser.add_argument("--export-quantized", action="store_true", help="Export quantized model")
-    export_parser.add_argument("--not-strict", action="store_true", help="Allow exported ckpt to differ from input hf ckpt. Useful when the input checkpoint is quantized.")
     args = parser.parse_args()
 
     if not args.command:
@@ -264,7 +261,6 @@ def main():
             hf_path=args.hf_path,
             show_progress=not args.no_progress,
             quantized=args.export_quantized,
-            strict=not args.not_strict,
         )
     else:
         raise RuntimeError(f"Unknown command: {args.command}")
