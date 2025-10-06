@@ -680,7 +680,7 @@ class MegatronParamMapping(ABC, Generic[WeightType]):
         gathered_weights = [torch.empty_like(megatron_weights) for _ in range(self.ep_size)]
         torch.distributed.all_gather(gathered_weights, megatron_weights, group=self.ep_group)
 
-        ## this should be in the right order because of the all-gather
+        # this should be in the right order because of the all-gather
         weights_dict = {}
         for i, param_name in enumerate(gathered_expert_param_names):
             if param_name in weights_dict:
@@ -688,8 +688,6 @@ class MegatronParamMapping(ABC, Generic[WeightType]):
                     [weights_dict[param_name], gathered_weights[i].unsqueeze(0)], dim=0)
             else:
                 weights_dict[param_name] = gathered_weights[i].unsqueeze(0)
-        for param_name in weights_dict:
-            weights_dict[param_name] = weights_dict[param_name].squeeze()
         return weights_dict
 
     def maybe_dequantize(self, tensor: torch.Tensor) -> torch.Tensor:
