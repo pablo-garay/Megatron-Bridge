@@ -141,6 +141,7 @@ def hook_hf_module_setattr_for_tp_grad_sync(module: torch.nn.Module) -> torch.nn
             if isinstance(value, torch.nn.Module):
                 for p in value.parameters(recurse=True):
                     setattr(p, "average_gradients_across_tp_domain", True)
+
         return _wrapped
 
     # Hook __setattr__ on the module and all existing submodules to catch

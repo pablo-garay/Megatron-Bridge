@@ -29,7 +29,8 @@ from .hf_dataset_makers import (
     make_medpix_dataset,
     make_rdr_dataset,
 )
-from .preloaded_provider import PreloadedQwen25VLConversationProvider
+from .mock_provider import MockVLMConversationProvider
+from .preloaded_provider import PreloadedVLMConversationProvider
 
 
 __all__ = [
@@ -41,7 +42,8 @@ __all__ = [
     # Dataset types/providers
     "VLMConversationDataset",
     "HFDatasetConversationProvider",
-    "PreloadedQwen25VLConversationProvider",
+    "PreloadedVLMConversationProvider",
+    "MockVLMConversationProvider",
     # Collation utilities
     "COLLATE_FNS",
     "default_collate_fn",

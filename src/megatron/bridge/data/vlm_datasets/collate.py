@@ -20,6 +20,8 @@ import torch
 import torch.nn.functional as F
 from PIL import Image  # noqa: F401  # may be used downstream by processors
 
+from megatron.bridge.training.utils.visual_inputs import Qwen2_5_VLVisualInputs
+
 from .token_utils import extract_skipped_token_ids
 
 
@@ -228,6 +230,8 @@ def qwen2_5_collate_fn(
             images=images_with,
             padding=True,
             return_tensors="pt",
+            min_pixels=200704,  # 256*28*28
+            max_pixels=1003520,  # 1280*28*28
         )
 
     if idx_without:
@@ -294,6 +298,16 @@ def qwen2_5_collate_fn(
     # Enforce label masking to match shifted loss_mask
     batch["labels"] = batch["labels"].masked_fill(loss_mask_t == 0, -100)
     batch["loss_mask"] = loss_mask_t
+    # Build Qwen2VL visual inputs object and attach to batch; remove raw keys
+    visual_inputs = Qwen2_5_VLVisualInputs(
+        pixel_values=batch.get("pixel_values"),
+        image_grid_thw=batch.get("image_grid_thw"),
+    )
+    if "pixel_values" in batch:
+        del batch["pixel_values"]
+    if "image_grid_thw" in batch:
+        del batch["image_grid_thw"]
+    batch["visual_inputs"] = visual_inputs
     return batch
 
 
@@ -333,6 +347,16 @@ def default_collate_fn(examples: list, processor, start_of_response_token=None) 
     loss_mask_t = torch.cat([loss_mask_t[:, 1:], torch.zeros_like(loss_mask_t[:, :1])], dim=1)
     batch["labels"] = batch["labels"].masked_fill(loss_mask_t == 0, -100)
     batch["loss_mask"] = loss_mask_t
+    # Build Qwen2VL visual inputs object and attach to batch; remove raw keys
+    visual_inputs = Qwen2_5_VLVisualInputs(
+        pixel_values=batch.get("pixel_values"),
+        image_grid_thw=batch.get("image_grid_thw"),
+    )
+    if "pixel_values" in batch:
+        del batch["pixel_values"]
+    if "image_grid_thw" in batch:
+        del batch["image_grid_thw"]
+    batch["visual_inputs"] = visual_inputs
     return batch
 
 

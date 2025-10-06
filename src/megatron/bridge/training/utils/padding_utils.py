@@ -24,6 +24,7 @@ from __future__ import annotations
 import torch
 import torch.nn.functional as F
 
+
 __all__ = [
     "pad_or_truncate_2d_to_len",
     "pad_or_truncate_pos_to_len",
@@ -44,13 +45,11 @@ def pad_or_truncate_2d_to_len(
     if current_len < target_len:
         return F.pad(x, (0, target_len - current_len), value=pad_value)
     if current_len > max_cap:
-        return x[:, : max_cap]
+        return x[:, :max_cap]
     return x
 
 
-def pad_or_truncate_pos_to_len(
-    pos: torch.Tensor | None, target_len: int, max_cap: int
-) -> torch.Tensor | None:
+def pad_or_truncate_pos_to_len(pos: torch.Tensor | None, target_len: int, max_cap: int) -> torch.Tensor | None:
     """Pad or truncate position ids to a target length with an upper cap.
 
     Extends positions by appending a monotonically increasing range starting
@@ -67,13 +66,11 @@ def pad_or_truncate_pos_to_len(
         )
         return torch.cat([pos, addition], dim=1)
     if current_len > max_cap:
-        return pos[:, : max_cap]
+        return pos[:, :max_cap]
     return pos
 
 
-def pad_or_truncate_attn_to_len(
-    mask: torch.Tensor | None, target_len: int, max_cap: int
-) -> torch.Tensor | None:
+def pad_or_truncate_attn_to_len(mask: torch.Tensor | None, target_len: int, max_cap: int) -> torch.Tensor | None:
     """Pad or truncate a 4D attention mask to the target length with an upper cap.
 
     Expects input of shape (batch, heads, seq_len, seq_len). Pads the last two dims.
@@ -85,7 +82,5 @@ def pad_or_truncate_attn_to_len(
     if s1 < target_len:
         return F.pad(mask, (0, target_len - s2, 0, target_len - s1), value=pad_value)
     if s1 > max_cap:
-        return mask[:, :, : max_cap, : max_cap]
+        return mask[:, :, :max_cap, :max_cap]
     return mask
-
-

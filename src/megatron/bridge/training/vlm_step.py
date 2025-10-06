@@ -14,8 +14,7 @@
 
 import logging
 from functools import partial
-from typing import Iterable, Optional
-from dataclasses import dataclass, fields
+from typing import Iterable
 
 import torch
 from megatron.core import parallel_state
@@ -28,51 +27,10 @@ from megatron.bridge.training.utils.loss_utils import create_loss_function as _c
 from megatron.bridge.training.utils.packed_seq_utils import get_packed_seq_params
 from megatron.bridge.training.utils.padding_utils import (
     pad_or_truncate_2d_to_len,
-    pad_or_truncate_pos_to_len,
     pad_or_truncate_attn_to_len,
+    pad_or_truncate_pos_to_len,
 )
- 
-@dataclass
-class VisualInputs:
-    """Container for optional visual modality tensors.
-
-    New modalities can be added as optional fields. Downstream code should
-    query available, non-None entries via as_model_kwargs().
-    """
-
-    # Image tensors, e.g., Qwen2.5-VL processor output.
-    pixel_values: Optional[torch.Tensor] = None
-
-    # Per-image temporal/spatial grid metadata (T, H, W) for videos, Qwen2.5-VL processor output.
-    image_grid_thw: Optional[torch.Tensor] = None
-
-    def as_model_kwargs(self) -> dict[str, torch.Tensor]:
-        """Return a mapping of non-None fields suitable for model forward kwargs."""
-        result: dict[str, torch.Tensor] = {}
-        for f in fields(self):
-            value = getattr(self, f.name)
-            if value is not None:
-                result[f.name] = value
-        return result
-
-    def normalized_for_model(self) -> dict[str, torch.Tensor]:
-        """Return non-None fields with shapes normalized for common expectations.
-
-        - pixel_values: [B, N, C, H, W] -> [B*N, C, H, W]
-        - image_grid_thw: [B, N, 3] -> [B*N, 3]
-        """
-        kwargs = self.as_model_kwargs()
-
-        pixel_values = kwargs.get("pixel_values")
-        if isinstance(pixel_values, torch.Tensor) and pixel_values.dim() == 5:
-            b, n, c, h, w = pixel_values.shape
-            kwargs["pixel_values"] = pixel_values.view(b * n, c, h, w)
-
-        image_grid_thw = kwargs.get("image_grid_thw")
-        if isinstance(image_grid_thw, torch.Tensor) and image_grid_thw.dim() == 3:
-            kwargs["image_grid_thw"] = image_grid_thw.view(-1, image_grid_thw.size(-1))
-
-        return kwargs
+from megatron.bridge.training.utils.visual_inputs import Qwen2_5_VLVisualInputs
 
 
 logger = logging.getLogger(__name__)
@@ -100,10 +58,9 @@ def get_batch_from_iterator(
 
     if not skip_getting_attention_mask_from_dataset:
         required_device_keys.add("attention_mask")
-    # Optionally include visual inputs if present in the batch
-    for key in VisualInputs().__dict__.keys():
-        if key in batch:
-            required_device_keys.add(key)
+
+    # Instead of raw tensors, expect a single 'visual_inputs' object in batch
+    required_device_keys.add("visual_inputs")
 
     if "cu_seqlens" in batch:
         required_device_keys.add("cu_seqlens")
@@ -117,7 +74,16 @@ def get_batch_from_iterator(
     _batch_required_keys = {}
     for key, val in batch.items():
         if key in required_device_keys:
-            _batch_required_keys[key] = val.cuda(non_blocking=True) if val is not None else None
+            if key == "visual_inputs":
+                if val is None:
+                    _batch_required_keys[key] = None
+                else:
+                    _batch_required_keys[key] = val
+                    # Move all visual inputs contained tensors to CUDA
+                    for k, v in val.__dict__.items():
+                        _batch_required_keys[key].__dict__[k] = v.cuda(non_blocking=True) if v is not None else None
+            else:
+                _batch_required_keys[key] = val.cuda(non_blocking=True) if val is not None else None
         elif key in required_host_keys:
             _batch_required_keys[key] = val.cpu() if val is not None else None
         else:
@@ -137,7 +103,7 @@ def get_batch(
     torch.Tensor,
     torch.Tensor,
     torch.Tensor,
-    Optional[VisualInputs],
+    Qwen2_5_VLVisualInputs,
 ]:
     """Generate a batch.
 
@@ -151,7 +117,7 @@ def get_batch(
         cu_seqlens, cu_seqlens_argmin, max_seqlen, visual_inputs (container of optional modalities)
     """
     if (not parallel_state.is_pipeline_first_stage()) and (not parallel_state.is_pipeline_last_stage()):
-        return None, None, None, None, None, None, None, None, None
+        return None, None, None, None, None, None, None, None, Qwen2_5_VLVisualInputs()
 
     batch = get_batch_from_iterator(
         data_iterator,
@@ -216,9 +182,7 @@ def get_batch(
             attn = pad_or_truncate_attn_to_len(attn, target_len, seq_cap)
             batch["attention_mask"] = attn  # type: ignore[assignment]
 
-    visual_inputs = VisualInputs(
-        **{k: batch.get(k) for k in VisualInputs().__dict__.keys()}  # type: ignore[arg-type]
-    )
+    visual_inputs = batch.get("visual_inputs")
 
     return (
         (batch.get("tokens") if batch.get("tokens") is not None else batch.get("input_ids")),
@@ -274,7 +238,7 @@ def forward_step(
         "attention_mask": attention_mask,
         "labels": labels,
     }
-    # Add optional visual inputs if available
+
     if visual_inputs is not None:
         forward_args.update(visual_inputs.normalized_for_model())
 

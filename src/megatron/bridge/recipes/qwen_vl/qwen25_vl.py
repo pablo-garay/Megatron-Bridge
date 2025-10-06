@@ -14,14 +14,15 @@
 
 import os
 from typing import List, Optional, Union
-from typing_extensions import TypedDict, Unpack
 
 import torch
+from typing_extensions import TypedDict, Unpack
 
 from megatron.bridge import AutoBridge
 from megatron.bridge.data.vlm_datasets import (
     HFDatasetConversationProvider,
-    PreloadedQwen25VLConversationProvider,
+    MockVLMConversationProvider,
+    PreloadedVLMConversationProvider,
 )
 from megatron.bridge.recipes.utils.optimizer_utils import distributed_fused_adam_with_cosine_annealing
 from megatron.bridge.recipes.utils.tokenizer_utils import DEFAULT_NULL_TOKENIZER_VOCAB_SIZE
@@ -215,11 +216,9 @@ def _qwen25_vl_common(
     _processor_model = tokenizer_model or hf_path
 
     if _dataset_choice == "mock":
-        from megatron.bridge.recipes.qwen_vl.qwen25_vl_dataset import MockQwen25VLDatasetProvider
-
-        dataset_cfg: DatasetProvider = MockQwen25VLDatasetProvider(
+        dataset_cfg: DatasetProvider = MockVLMConversationProvider(
             sequence_length=seq_length,
-            hf_model_path=_processor_model,
+            hf_processor_path=_processor_model,
             prompt="Describe this image.",
             num_workers=1,
             dataloader_type="single",
@@ -230,7 +229,7 @@ def _qwen25_vl_common(
             pad_to_max_length=True,
         )
     elif _dataset_choice == "preloaded":
-        dataset_cfg = PreloadedQwen25VLConversationProvider(
+        dataset_cfg = PreloadedVLMConversationProvider(
             sequence_length=seq_length,
             hf_processor_path=_processor_model,
             train_data_path=train_data_path[0] if isinstance(train_data_path, list) else train_data_path,
@@ -247,7 +246,7 @@ def _qwen25_vl_common(
         dataset_cfg = HFDatasetConversationProvider(
             sequence_length=seq_length,
             hf_processor_path=_processor_model,
-            maker_name="make_medpix_dataset",
+            maker_name="make_cord_v2_dataset",
             num_workers=2,
             dataloader_type="single",
             data_sharding=True,

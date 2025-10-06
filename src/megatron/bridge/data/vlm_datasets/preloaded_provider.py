@@ -160,7 +160,7 @@ def _load_preloaded_examples(path: str) -> List[Dict[str, Any]]:
 
 
 @dataclass(kw_only=True)
-class PreloadedQwen25VLConversationProvider(DatasetProvider):
+class PreloadedVLMConversationProvider(DatasetProvider):
     """DatasetProvider that builds VLM conversation datasets from preloaded JSON/JSONL files.
 
     The provider converts legacy Qwen2/VL style records with '<image>'/'<video>' markers
