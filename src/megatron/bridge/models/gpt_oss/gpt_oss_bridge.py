@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 from megatron.core import parallel_state
 from megatron.core.models.gpt.gpt_model import GPTModel
-from transformers import GenerationConfig, GptOssForCausalLM
+from transformers import GenerationConfig, GptOssForCausalLM, GptOssConfig
 
 from megatron.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from megatron.bridge.models.conversion.model_bridge import MegatronModelBridge, WeightConversionTask
@@ -51,8 +51,11 @@ class GPTOSSBridge(MegatronModelBridge):
         # and we need to merge the weights of multiple experts during export.
         self.hf_weights_cache = {}
 
-    def provider_bridge(self, hf_pretrained: PreTrainedCausalLM) -> GPTOSSProvider:
-        hf_config = hf_pretrained.config
+    def provider_bridge(self, hf_pretrained: PreTrainedCausalLM | GptOssConfig) -> GPTOSSProvider:
+        if isinstance(hf_pretrained, PreTrainedCausalLM):
+            hf_config = hf_pretrained.config
+        else:
+            hf_config = hf_pretrained
 
         # Extract generation config
         generation_config = getattr(hf_pretrained, 'generation_config', None)

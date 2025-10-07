@@ -16,6 +16,8 @@ import logging
 from dataclasses import dataclass
 from typing import Callable, List, Literal, Optional, Tuple, Union
 
+import torch
+
 from megatron.bridge.models.gpt_provider import GPTModelProvider
 from megatron.core.fusions.fused_bias_geglu import quick_gelu
 
@@ -39,6 +41,8 @@ class GPTOSSProvider(GPTModelProvider):
     vocab_size: int = 201088
     hidden_dropout: float = 0.0
     attention_dropout: float = 0.0
+    bf16: bool = True
+    params_dtype: torch.dtype = torch.bfloat16
 
     position_embedding_type: str = "yarn"
     rotary_base: int = 150000
