@@ -71,18 +71,29 @@ class GPTOSSBridge(MegatronModelBridge):
         )
         return provider
 
-    def modify_loaded_hf_weight(self, hf_param: str | dict[str, str], hf_state_dict: Mapping[str, torch.Tensor]) -> torch.Tensor:
+    def modify_loaded_hf_weight(
+        self, 
+        hf_param: str | dict[str, str], 
+        hf_state_dict: Mapping[str, torch.Tensor]
+    ) -> torch.Tensor:
         """Load weights from HuggingFace state dict and dequantize if necessary."""
         if isinstance(hf_param, str):
-            hf_weights = hf_state_dict[hf_param]
-        elif "blocks" in hf_param and "scales" in hf_param:
-            new_hf_param_name = hf_param['blocks'].replace("_blocks", "")
-            if new_hf_param_name in self.hf_weights_cache:
-                hf_weights = self.hf_weights_cache[new_hf_param_name]
+            if hf_param in self.hf_weights_cache:
+                return self.hf_weights_cache[hf_param]
+            if hf_param in hf_state_dict:
+                hf_weights = hf_state_dict[hf_param]
+                if ".mlp.experts." in hf_param and len(hf_weights.shape) == 3:
+                    hf_weights = hf_weights.transpose(-1, -2)
+                self.hf_weights_cache[hf_param] = hf_weights
             else:
-                hf_weights = _dequantize_mxfp4(hf_state_dict[hf_param['blocks']], hf_state_dict[hf_param['scales']])
-                # save in cache
-                self.hf_weights_cache[new_hf_param_name] = hf_weights
+                blocks_key = hf_param + "_blocks"
+                scales_key = hf_param + "_scales"
+                if blocks_key in hf_state_dict and scales_key in hf_state_dict:
+                    hf_weights = _dequantize_mxfp4(hf_state_dict[blocks_key], hf_state_dict[scales_key])
+                    self.hf_weights_cache[hf_param] = hf_weights
+                else:
+                    raise KeyError(f"Cannot locate weights for '{hf_param}'. Missing both de-quantized tensor and "
+                                   f"quantized representation (blocks='{blocks_key}', scales='{scales_key}').")
         else:
             hf_weights = {k: hf_state_dict[v] for k, v in hf_param.items()}
         return hf_weights
@@ -158,9 +169,11 @@ class GPTOSSBridge(MegatronModelBridge):
                 v="model.layers.*.self_attn.v_proj.bias",
                 megatron_param="decoder.layers.*.self_attention.linear_qkv.bias",
             ),
+            # Register the de-quantized weight names. If HF model is quantized,
+            # the logic in `modify_loaded_hf_weight` will find the blocks and scales tensors.
+            # Export is always de-quantized
             GPTOSSMLPDownProjMapping(
-                hf_param="model.layers.*.mlp.experts.down_proj_blocks" if self.quantized else "model.layers.*.mlp.experts.down_proj",
-                hf_scales="model.layers.*.mlp.experts.down_proj_scales" if self.quantized else None,
+                hf_param="model.layers.*.mlp.experts.down_proj",
                 megatron_param="decoder.layers.*.mlp.experts.linear_fc2.weight*",
             ),
             GPTOSSMLPDownProjMapping(
@@ -168,8 +181,7 @@ class GPTOSSBridge(MegatronModelBridge):
                 megatron_param="decoder.layers.*.mlp.experts.linear_fc2.bias*",
             ),
             GPTOSSMLPGateUpProjMapping(
-                hf_param="model.layers.*.mlp.experts.gate_up_proj_blocks" if self.quantized else "model.layers.*.mlp.experts.gate_up_proj",
-                hf_scales="model.layers.*.mlp.experts.gate_up_proj_scales" if self.quantized else None,
+                hf_param="model.layers.*.mlp.experts.gate_up_proj",
                 megatron_param="decoder.layers.*.mlp.experts.linear_fc1.weight*",
             ),
             GPTOSSMLPGateUpProjMapping(
@@ -185,21 +197,21 @@ class GPTOSSMLPDownProjMapping(AutoMapping):
     """
     MLPDownProj for expert weights GPT-OSS models.
     """
-    def __init__(self, megatron_param: str, hf_param: str, hf_scales: Optional[str] = None):
-        if hf_scales is not None:
-            hf_param = {"blocks": hf_param, "scales": hf_scales}
+    def __init__(self, megatron_param: str, hf_param: str):
         super().__init__(megatron_param, hf_param)
+        self.allow_hf_name_mismatch = True
 
     def hf_to_megatron(self, hf_weights: torch.Tensor, megatron_module: nn.Module) -> torch.Tensor:
         global_expert_number = extract_expert_number_from_param(self.megatron_param)
         return super().hf_to_megatron(hf_weights[global_expert_number], megatron_module)
     
     def megatron_to_hf(self, megatron_weights: torch.Tensor, megatron_module: nn.Module) -> Dict[str, torch.Tensor]:
+        # only bf16 export is supported currently
         if megatron_weights is None:
             return super().megatron_to_hf(megatron_weights, megatron_module)
 
-        if len(megatron_weights.shape) == 2 and isinstance(self.hf_param, str):
-            # for BF16 export
+        # GPT-OSS stores fc2 weight transposed vs Megatron when using BF16.
+        if len(megatron_weights.shape) == 2:
             megatron_weights = megatron_weights.transpose(0, 1)
         return super().megatron_to_hf(megatron_weights.contiguous(), megatron_module)
 
@@ -211,10 +223,9 @@ class GPTOSSMLPGateUpProjMapping(AutoMapping):
     """
     MLPGateUpProj for expert weights GPT-OSS models.
     """
-    def __init__(self, megatron_param: str, hf_param: str, hf_scales: Optional[str] = None):
-        if hf_scales is not None:
-            hf_param = {"blocks": hf_param, "scales": hf_scales}
+    def __init__(self, megatron_param: str, hf_param: str):
         super().__init__(megatron_param, hf_param)
+        self.allow_hf_name_mismatch = True
 
     @staticmethod
     def _interleave(gate_up_proj):
@@ -232,12 +243,12 @@ class GPTOSSMLPGateUpProjMapping(AutoMapping):
         return super().hf_to_megatron(self._interleave(hf_weights[global_expert_number]), megatron_module)
     
     def megatron_to_hf(self, megatron_weights: torch.Tensor, megatron_module: nn.Module) -> Dict[str, torch.Tensor]:
+        # only bf16 export is supported currently
         if megatron_weights is None:
             return super().megatron_to_hf(megatron_weights, megatron_module)
 
         megatron_weights = self._uninterleave(megatron_weights)
-        if len(megatron_weights.shape) == 2 and isinstance(self.hf_param, str):
-            # for BF16 export
+        if len(megatron_weights.shape) == 2:
             megatron_weights = megatron_weights.transpose(0, 1)
         return super().megatron_to_hf(megatron_weights.contiguous(), megatron_module)
 

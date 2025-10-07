@@ -111,6 +111,8 @@ class MegatronParamMapping(ABC, Generic[WeightType]):
             self._tp_group = None
             self._etp_group = None
 
+        self.allow_hf_name_mismatch = False
+
     @property
     def tp_group(self):
         """Get the tensor model parallel group."""
