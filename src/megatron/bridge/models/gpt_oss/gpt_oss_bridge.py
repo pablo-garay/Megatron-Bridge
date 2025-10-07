@@ -68,9 +68,13 @@ class GPTOSSBridge(MegatronModelBridge):
         provider = GPTOSSProvider(
             num_layers=hf_config.num_hidden_layers,
             num_moe_experts=hf_config.num_local_experts,
-            bf16=True,
-            params_dtype=torch.bfloat16,
             generation_config=generation_config,
+            # for unit tests only:
+            hidden_size=hf_config.hidden_size,
+            moe_ffn_hidden_size=hf_config.intermediate_size,
+            num_attention_heads=hf_config.num_attention_heads,
+            num_query_groups=hf_config.num_key_value_heads,
+            vocab_size=hf_config.vocab_size,
         )
         return provider
 
