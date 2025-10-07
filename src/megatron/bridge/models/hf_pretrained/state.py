@@ -707,6 +707,7 @@ class SafeTensorsStateSource(StateSource):
 
         output_path = Path(output_path)
         output_path.mkdir(parents=True, exist_ok=True)
+
         key_to_filename_map = self.key_to_filename_map
         all_expected_keys = set(key_to_filename_map.keys())
 
