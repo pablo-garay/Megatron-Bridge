@@ -13,13 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 
 import pytest
 
 from megatron.bridge.models.conversion.auto_bridge import AutoBridge
 from megatron.bridge.models.gpt_oss import (
-    GPTOSSProvider,
     GPTOSSProvider20B,
     GPTOSSProvider120B,
 )
@@ -81,5 +79,3 @@ class TestGptOssProviderMapping:
         predefined_provider.finalize()
 
         compare_provider_configs(converted_provider, predefined_provider, hf_model_id)
-
-

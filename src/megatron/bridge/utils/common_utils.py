@@ -14,7 +14,6 @@
 
 import os
 import re
-from typing import Type, Union
 import warnings
 
 import torch
@@ -122,9 +121,10 @@ def extract_expert_number_from_param(param_name: str) -> int:
     Returns:
         The expert number.
     """
-    pattern = r'(?:experts\.|weight|bias)(\d+)'
+    pattern = r"(?:experts\.|weight|bias)(\d+)"
     match = re.search(pattern, param_name)
     if not match:
-        raise ValueError(f"No expert number found in parameter name: {param_name}. "
-                         f"Please update the regex {pattern} if necessary.")
+        raise ValueError(
+            f"No expert number found in parameter name: {param_name}. Please update the regex {pattern} if necessary."
+        )
     return int(match.group(1))

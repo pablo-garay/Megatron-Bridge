@@ -56,5 +56,3 @@ class TestGptOssProviderDefaults:
 
         assert provider.num_layers == 36
         assert provider.num_moe_experts == 128
-
-

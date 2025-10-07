@@ -687,7 +687,8 @@ class MegatronParamMapping(ABC, Generic[WeightType]):
         for i, param_name in enumerate(gathered_expert_param_names):
             if param_name in weights_dict:
                 weights_dict[param_name] = torch.cat(
-                    [weights_dict[param_name], gathered_weights[i].unsqueeze(0)], dim=0)
+                    [weights_dict[param_name], gathered_weights[i].unsqueeze(0)], dim=0
+                )
             else:
                 weights_dict[param_name] = gathered_weights[i].unsqueeze(0)
         return weights_dict

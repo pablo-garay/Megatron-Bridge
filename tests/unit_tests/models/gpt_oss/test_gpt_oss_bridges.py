@@ -64,5 +64,3 @@ class TestGptOssBridge:
         # dtype mapping
         assert provider.bf16 is True
         assert provider.params_dtype == torch.bfloat16
-
-

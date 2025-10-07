@@ -17,9 +17,10 @@ from dataclasses import dataclass
 from typing import Callable, List, Literal, Optional, Tuple, Union
 
 import torch
+from megatron.core.fusions.fused_bias_geglu import quick_gelu
 
 from megatron.bridge.models.gpt_provider import GPTModelProvider
-from megatron.core.fusions.fused_bias_geglu import quick_gelu
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class GPTOSSProvider(GPTModelProvider):
     """
     Base config for GPT-OSS
     """
+
     hidden_size: int = 2880
     num_attention_heads: int = 64
     num_query_groups: int = 8
@@ -46,10 +48,10 @@ class GPTOSSProvider(GPTModelProvider):
 
     position_embedding_type: str = "yarn"
     rotary_base: int = 150000
-    yarn_rotary_scaling_factor: float = 32.
+    yarn_rotary_scaling_factor: float = 32.0
     yarn_original_max_position_embeddings: int = 4096
-    yarn_beta_fast: float = 32.
-    yarn_beta_slow: float = 1.
+    yarn_beta_fast: float = 32.0
+    yarn_beta_slow: float = 1.0
     yarn_correction_range_round_to_int: bool = False
     yarn_mscale: float = 1.0
     yarn_mscale_all_dim: float = 1.0
@@ -63,7 +65,7 @@ class GPTOSSProvider(GPTModelProvider):
     moe_router_load_balancing_type: str = "none"
     seq_length: int = 131072
     window_size: Optional[Tuple[int, int]] = (128, 0)
-    softmax_type: Literal['vanilla', 'off-by-one', 'learnable'] = "learnable"
+    softmax_type: Literal["vanilla", "off-by-one", "learnable"] = "learnable"
     activation_func: Callable = quick_gelu
     glu_linear_offset: float = 1.0
     bias_activation_fusion: bool = True
@@ -71,15 +73,18 @@ class GPTOSSProvider(GPTModelProvider):
     window_attn_skip_freq: Optional[Union[int, List[int]]] = 2  # alternative SWA/full
     activation_func_clamp_value: Optional[float] = 7.0
 
+
 @dataclass
 class GPTOSSProvider120B(GPTOSSProvider):
-    """Config for GPT-OSS 120B """
+    """Config for GPT-OSS 120B"""
+
     num_layers: int = 36
     num_moe_experts: int = 128
 
 
 @dataclass
 class GPTOSSProvider20B(GPTOSSProvider):
-    """Config for GPT-OSS 20B """
+    """Config for GPT-OSS 20B"""
+
     num_layers: int = 24
     num_moe_experts: int = 32

@@ -49,10 +49,10 @@ from megatron.bridge.models.gemma import (
     GemmaModelProvider7B,
 )
 from megatron.bridge.models.gpt_oss import (
+    GPTOSSBridge,
     GPTOSSProvider,
     GPTOSSProvider20B,
     GPTOSSProvider120B,
-    GPTOSSBridge,
 )
 from megatron.bridge.models.gpt_provider import GPTModelProvider
 from megatron.bridge.models.llama import (
