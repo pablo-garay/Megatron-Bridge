@@ -108,6 +108,7 @@ def main(
         model_provider.pipeline_model_parallel_size = pp
         model_provider.pipeline_dtype = torch.bfloat16
         model_provider.expert_model_parallel_size = ep
+        model_provider.expert_tensor_parallel_size = etp
 
         # Once all overrides are set, finalize the model provider to ensure the post initialization logic is run
         model_provider.finalize()
