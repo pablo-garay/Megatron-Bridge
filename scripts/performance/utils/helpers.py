@@ -156,9 +156,6 @@ def apply_perf_matrix_overrides(yaml_root: Any, recipe: Any, args: Any, excluded
     1) Preferred: Nested overrides mirroring ConfigContainer (train/model/ddp/...)
        placed either directly at this dtype block or under `ConfigContainer:` key.
        These are applied generically via apply_overrides.
-    2) Backward-compatible: Convenience shorthand keys (mbs/gbs/seq_length/tp/pp/vp/cp/ep/etp,
-       cuda_graphs, use_megatron_fsdp, recompute_num_layers, cpu_offloading_num_layers).
-       These are applied only if present and do not override explicit nested overrides.
     """
     preset = get_perf_matrix_overrides(yaml_root, args)
     if not preset:
@@ -174,7 +171,6 @@ def apply_perf_matrix_overrides(yaml_root: Any, recipe: Any, args: Any, excluded
     merged_perf = OmegaConf.merge(OmegaConf.create(common), OmegaConf.create(dtype_cfg or {}))
     perf_overrides: Dict[str, Any] = OmegaConf.to_container(merged_perf, resolve=True)  # type: ignore
 
-    # 1) Preferred generic application: apply nested overrides that mirror ConfigContainer
     cfg_like_overrides: Dict[str, Any] = (
         perf_overrides.get("ConfigContainer") if isinstance(perf_overrides, dict) else None
     )
@@ -185,16 +181,13 @@ def apply_perf_matrix_overrides(yaml_root: Any, recipe: Any, args: Any, excluded
     if isinstance(cfg_like_overrides, dict):
         apply_overrides(recipe, cfg_like_overrides, excluded_fields)
 
+    if hasattr(recipe.model, "tensor_model_parallel_size"):
+        recipe.model.sequence_parallel = bool(recipe.model.tensor_model_parallel_size > 1)
+
     # Keep only bundled convenience flags
-    # Convenience flag for FSDP if provided at top-level (Option A prefers nested ddp.use_megatron_fsdp)
     if "use_megatron_fsdp" in perf_overrides:
         recipe.ddp.use_megatron_fsdp = bool(perf_overrides.get("use_megatron_fsdp", False))
 
-    # Apply optional convenience knobs
     set_cuda_graph_overrides(recipe, perf_overrides)
     set_recompute_overrides(recipe, perf_overrides)
     set_megatron_fsdp_overrides(recipe)
-
-    # Derive sequence_parallel from TP
-    if hasattr(recipe.model, "tensor_model_parallel_size"):
-        recipe.model.sequence_parallel = bool(recipe.model.tensor_model_parallel_size > 1)
