@@ -247,7 +247,6 @@ class MockVLMConversationProvider(DatasetProvider):
                 target_length=size,
                 processor=self._processor,
                 collate_impl=None,  # infer collate from processor type (qwen2_5_collate_fn)
-                start_of_response_token=None,
             )
 
         train_ds = _maybe_make(context.train_samples)

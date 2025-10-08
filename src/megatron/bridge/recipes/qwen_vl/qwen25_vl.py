@@ -89,7 +89,7 @@ def qwen25_vl_3b_pretrain_config(**user_kwargs: Unpack[Qwen25VLCommonKwargs]) ->
     """
     recommended_kwargs: Qwen25VLCommonKwargs = {
         "hf_path": "Qwen/Qwen2.5-VL-3B-Instruct",
-        "tensor_parallelism": 2,
+        "tensor_parallelism": 1,
         "pipeline_parallelism": 1,
     }
     combined_kwargs: Qwen25VLCommonKwargs = {**recommended_kwargs, **user_kwargs}
@@ -300,68 +300,3 @@ def _qwen25_vl_common(
     )
 
     return cfg
-
-
-def pretrain_config(
-    dir: Optional[str] = None,
-    name: str = "qwen25_vl_pretrain",
-    data_paths: Optional[List[str]] = None,  # Unused, kept for compatibility
-    data_args_path: Optional[str] = None,  # Unused, kept for compatibility
-    train_data_path: Optional[List[str]] = None,
-    valid_data_path: Optional[List[str]] = None,
-    test_data_path: Optional[List[str]] = None,
-    per_split_data_args_path: Optional[str] = None,  # Unused, kept for compatibility
-    dataset_type: Optional[str] = None,
-    image_folder: Optional[str] = None,
-    tensor_parallelism: int = 2,
-    pipeline_parallelism: int = 1,
-    pipeline_parallelism_dtype: Optional[torch.dtype] = None,
-    virtual_pipeline_parallelism: Optional[int] = None,
-    context_parallelism: int = 1,
-    sequence_parallelism: bool = False,
-    use_megatron_fsdp: bool = False,
-    train_iters: int = 300000,
-    global_batch_size: int = 32,
-    micro_batch_size: int = 2,
-    seq_length: int = 4096,
-    lr: float = 3e-4,
-    min_lr: float = 3e-5,
-    lr_warmup_iters: int = 500,
-    precision_config: Optional[Union[MixedPrecisionConfig, str]] = "bf16_mixed",
-    comm_overlap_config: Optional[CommOverlapConfig] = None,
-    tokenizer_model: Optional[str] = None,
-    freeze_language_model: bool = False,
-    freeze_vision_model: bool = False,
-    freeze_vision_projection: bool = False,
-) -> ConfigContainer:
-    """Backward-compatible wrapper that defaults to the 3B Instruct model."""
-    return _qwen25_vl_common(
-        hf_path="Qwen/Qwen2.5-VL-3B-Instruct",
-        dir=dir,
-        name=name,
-        train_data_path=train_data_path,
-        valid_data_path=valid_data_path,
-        test_data_path=test_data_path,
-        dataset_type=dataset_type,
-        image_folder=image_folder,
-        tokenizer_model=tokenizer_model,
-        tensor_parallelism=tensor_parallelism,
-        pipeline_parallelism=pipeline_parallelism,
-        pipeline_parallelism_dtype=pipeline_parallelism_dtype,
-        virtual_pipeline_parallelism=virtual_pipeline_parallelism,
-        context_parallelism=context_parallelism,
-        sequence_parallelism=sequence_parallelism,
-        use_megatron_fsdp=use_megatron_fsdp,
-        train_iters=train_iters,
-        global_batch_size=global_batch_size,
-        micro_batch_size=micro_batch_size,
-        seq_length=seq_length,
-        lr=lr,
-        min_lr=min_lr,
-        lr_warmup_iters=lr_warmup_iters,
-        precision_config=precision_config,
-        comm_overlap_config=comm_overlap_config,
-        freeze_language_model=freeze_language_model,
-        freeze_vision_model=freeze_vision_model,
-        freeze_vision_projection=freeze_vision_projection,
-    )

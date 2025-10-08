@@ -17,14 +17,14 @@ Dataset types and providers for conversation-style VLM datasets.
 """
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 from transformers import AutoProcessor
 
 from megatron.bridge.training.config import DatasetBuildContext, DatasetProvider
 
-from .collate import COLLATE_FNS, default_collate_fn
+from .collate import COLLATE_FNS
 from .hf_dataset_makers import (
     make_cord_v2_dataset,
     make_cv17_dataset,
@@ -51,7 +51,6 @@ class VLMConversationDataset(torch.utils.data.Dataset):
         target_length: int,
         processor: Any,
         collate_impl: Optional[Callable[[list, Any], Dict[str, torch.Tensor]]] = None,
-        start_of_response_token: Optional[Union[str, List[int]]] = None,
     ) -> None:
         assert isinstance(base_examples, list) and len(base_examples) > 0, "base_examples must be a non-empty list"
         self._base_examples = base_examples
@@ -62,9 +61,6 @@ class VLMConversationDataset(torch.utils.data.Dataset):
         selected_impl = collate_impl or COLLATE_FNS.get(collate_key, COLLATE_FNS["default"])  # type: ignore[index]
 
         def _bound_collate(batch: list) -> Dict[str, torch.Tensor]:
-            # Some collate functions accept start_of_response_token as third arg
-            if selected_impl is default_collate_fn:
-                return selected_impl(batch, self._processor, start_of_response_token)  # type: ignore[arg-type]
             return selected_impl(batch, self._processor)  # type: ignore[call-arg]
 
         self.collate_fn = _bound_collate
@@ -104,9 +100,6 @@ class HFDatasetConversationProvider(DatasetProvider):
 
     # Optional collate override. If None, inferred from processor type.
     collate_impl: Optional[Callable[[list, Any], Dict[str, torch.Tensor]]] = None
-
-    # Token or token-ids marking start of response for loss masking when supported
-    start_of_response_token: Optional[Union[str, List[int]]] = None
 
     # Keep parity with GPTDatasetConfig usage in batching utilities
     skip_getting_attention_mask_from_dataset: bool = True
@@ -152,7 +145,6 @@ class HFDatasetConversationProvider(DatasetProvider):
             target_length=target_length,
             processor=processor,
             collate_impl=self.collate_impl,
-            start_of_response_token=self.start_of_response_token,
         )
 
     def build_datasets(self, context: DatasetBuildContext) -> Tuple[Optional[Any], Optional[Any], Optional[Any]]:

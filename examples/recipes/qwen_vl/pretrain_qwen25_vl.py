@@ -16,7 +16,8 @@
 """
 Qwen2.5-VL Pretraining Script with YAML and CLI Configuration Overrides.
 
-This mirrors the Llama example flow and uses the Qwen-VL recipe's pretrain_config().
+This mirrors the Llama example flow and uses the Qwen-VL recipe helper
+`qwen25_vl_3b_pretrain_config()`.
 
 Examples:
     Basic usage with default configuration:
@@ -40,7 +41,7 @@ from typing import Tuple
 
 from omegaconf import OmegaConf
 
-from megatron.bridge.recipes.qwen_vl.qwen25_vl import pretrain_config
+from megatron.bridge.recipes.qwen_vl.qwen25_vl import qwen25_vl_7b_pretrain_config as pretrain_config
 from megatron.bridge.training.config import ConfigContainer
 from megatron.bridge.training.pretrain import pretrain
 from megatron.bridge.training.utils.omegaconf_utils import (

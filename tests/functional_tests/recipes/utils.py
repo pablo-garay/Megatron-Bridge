@@ -34,6 +34,7 @@ def run_pretrain_recipe_test(
     tmp_path: Path,
     tensor_parallelism: Optional[int] = None,
     pipeline_parallelism: Optional[int] = None,
+    model_overrides: Optional[dict] = None,
 ):
     """
     Common test implementation for pretrain recipe configurations.
@@ -66,6 +67,14 @@ def run_pretrain_recipe_test(
         config.model.seq_length = test_seq_length
         config.dataset.sequence_length = test_seq_length
 
+        # Keep dataloader light-weight for CI
+        if hasattr(config.dataset, "pin_memory"):
+            config.dataset.pin_memory = False
+        if hasattr(config.dataset, "num_workers"):
+            config.dataset.num_workers = 0
+        if hasattr(config.dataset, "persistent_workers"):
+            config.dataset.persistent_workers = False
+
         train_samples_needed = config.train.train_iters * config.train.global_batch_size
         eval_samples_needed = config.train.eval_iters * config.train.global_batch_size
         test_samples_needed = 100  # Minimal test samples
@@ -80,9 +89,20 @@ def run_pretrain_recipe_test(
         config.dataset.split = [train_split, valid_split, test_split]
 
         if tensor_parallelism is not None:
-            config.model.tensor_parallelism = tensor_parallelism
+            if hasattr(config.model, "tensor_model_parallel_size"):
+                config.model.tensor_model_parallel_size = tensor_parallelism
+            else:
+                setattr(config.model, "tensor_parallelism", tensor_parallelism)
         if pipeline_parallelism is not None:
-            config.model.pipeline_parallelism = pipeline_parallelism
+            if hasattr(config.model, "pipeline_model_parallel_size"):
+                config.model.pipeline_model_parallel_size = pipeline_parallelism
+            else:
+                setattr(config.model, "pipeline_parallelism", pipeline_parallelism)
+
+        # Apply any model-level overrides (e.g., shrink layer/expert counts for CI)
+        if model_overrides:
+            for key, value in model_overrides.items():
+                setattr(config.model, key, value)
 
         pretrain(config, forward_step)
 

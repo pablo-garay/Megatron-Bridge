@@ -39,53 +39,6 @@ except ImportError:
     HAVE_QWEN_VL_UTILS = False
 
 
-def create_loss_mask_with_start_of_response_token(input_ids, processor, start_of_response_token=None):
-    r"""
-    Create loss mask by finding start of turn token positions, similar to squad.py approach.
-
-    Args:
-        input_ids: List or tensor of token IDs for a single example
-        processor: Processor/tokenizer to convert token string to ID
-        start_of_response_token: String token that marks the start of turns (e.g., "<start_of_turn>model\n")
-
-    Returns:
-        loss_mask: List of 0/1 flags where 0 = masked (prompt), 1 = unmasked (response)
-    """
-
-    def find_sequence_in_list(input_ids, target_sequence):
-        """Find the starting index of target_sequence in input_ids"""
-        if not target_sequence:
-            return -1
-        for i in range(len(input_ids) - len(target_sequence) + 1):
-            if input_ids[i : i + len(target_sequence)] == target_sequence:
-                return i
-        return -1
-
-    tokenizer = getattr(processor, "tokenizer", processor)
-    input_ids = input_ids.tolist()
-
-    if start_of_response_token is None:
-        return [1] * len(input_ids)
-
-    if isinstance(start_of_response_token, str):
-        start_of_response_token_ids = tokenizer(start_of_response_token, add_special_tokens=False)["input_ids"]
-        first_occurrence = find_sequence_in_list(input_ids, start_of_response_token_ids)
-        response_start = first_occurrence if first_occurrence >= 0 else 0
-    else:
-        response_start = 0
-
-    pad_token_id = getattr(tokenizer, "pad_token_id", 0)
-    if pad_token_id is None:
-        pad_token_id = 0
-    loss_mask = [0] * response_start + [1] * (len(input_ids) - response_start)
-
-    for i, token_id in enumerate(input_ids):
-        if token_id == pad_token_id:
-            loss_mask[i] = 0
-
-    return loss_mask
-
-
 def _gather_assistant_text_segments(example: dict) -> list[str]:
     """Extract assistant text segments from the structured conversation example.
 
@@ -194,9 +147,7 @@ def phi4_mm_collate_fn(examples, processor):
     return batch
 
 
-def qwen2_5_collate_fn(
-    examples: list, processor, start_of_response_token: str = "<|im_start|>assistant\n"
-) -> dict[str, torch.Tensor]:
+def qwen2_5_collate_fn(examples: list, processor) -> dict[str, torch.Tensor]:
     """Collate function for Qwen2.5 VL model."""
     if not HAVE_QWEN_VL_UTILS:
         raise ImportError(MISSING_QWEN_VL_UTILS_MSG)
@@ -311,7 +262,7 @@ def qwen2_5_collate_fn(
     return batch
 
 
-def default_collate_fn(examples: list, processor, start_of_response_token=None) -> dict[str, torch.Tensor]:
+def default_collate_fn(examples: list, processor) -> dict[str, torch.Tensor]:
     """Default collate function for VLM models."""
     if not HAVE_QWEN_VL_UTILS:
         raise ImportError(MISSING_QWEN_VL_UTILS_MSG)

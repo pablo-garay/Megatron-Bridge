@@ -21,7 +21,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from transformers import AutoProcessor
 
@@ -181,9 +181,6 @@ class PreloadedVLMConversationProvider(DatasetProvider):
     # Optional image/video root to resolve relative paths
     image_folder: Optional[str] = None
 
-    # Token or token-ids marking start of response for loss masking when supported
-    start_of_response_token: Optional[Union[str, List[int]]] = None
-
     # Keep parity with GPTDatasetConfig usage in batching utilities
     skip_getting_attention_mask_from_dataset: bool = True
 
@@ -209,7 +206,6 @@ class PreloadedVLMConversationProvider(DatasetProvider):
             base_examples=base_examples,
             target_length=target_length,
             processor=processor,
-            start_of_response_token=self.start_of_response_token,
         )
 
     def build_datasets(self, context: DatasetBuildContext) -> Tuple[Optional[Any], Optional[Any], Optional[Any]]:
