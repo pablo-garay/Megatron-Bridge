@@ -61,6 +61,7 @@ DEFAULT_CONFIG_FILE_PATH: Path = SCRIPT_DIR / "conf" / DEFAULT_CONFIG_FILENAME
 
 
 def parse_cli_args() -> Tuple[argparse.Namespace, list[str]]:
+    """Parse known script args and return remaining as Hydra-style overrides."""
     parser = argparse.ArgumentParser(
         description="Pretrain Qwen2.5-VL with YAML and CLI overrides",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -104,6 +105,9 @@ def parse_cli_args() -> Tuple[argparse.Namespace, list[str]]:
 
 
 def main() -> None:
+    """
+    Load the base VLM recipe config, apply YAML/CLI overrides, and start pretraining.
+    """
     args, cli_overrides = parse_cli_args()
 
     logger.info("Megatron-Bridge Qwen2.5-VL Pretraining Script with YAML & CLI Overrides")
