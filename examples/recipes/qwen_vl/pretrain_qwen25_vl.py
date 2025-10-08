@@ -16,8 +16,9 @@
 """
 Qwen2.5-VL Pretraining Script with YAML and CLI Configuration Overrides.
 
-This mirrors the Llama example flow and uses the Qwen-VL recipe helper
-`qwen25_vl_3b_pretrain_config()`.
+This mirrors the Llama example flow and uses the Qwen-VL recipe helpers.
+You can pick a specific recipe via `--recipe`, e.g., `qwen25_vl_3b_pretrain_config`,
+`qwen25_vl_7b_pretrain_config`, etc.
 
 Examples:
     Basic usage with default configuration:
@@ -30,6 +31,9 @@ Examples:
 
     CLI overrides:
         $ torchrun --nproc_per_node=8 pretrain_qwen25_vl.py model.tensor_model_parallel_size=4 train.train_iters=100000
+
+    Selecting a specific recipe:
+        $ torchrun --nproc_per_node=8 pretrain_qwen25_vl.py --recipe qwen25_vl_7b_pretrain_config
 """
 
 import argparse
@@ -41,7 +45,7 @@ from typing import Tuple
 
 from omegaconf import OmegaConf
 
-from megatron.bridge.recipes.qwen_vl.qwen25_vl import qwen25_vl_7b_pretrain_config as pretrain_config
+from megatron.bridge.recipes.qwen_vl import qwen25_vl as qwen_vl_recipes
 from megatron.bridge.training.config import ConfigContainer
 from megatron.bridge.training.pretrain import pretrain
 from megatron.bridge.training.utils.omegaconf_utils import (
@@ -96,6 +100,15 @@ def parse_cli_args() -> Tuple[argparse.Namespace, list[str]]:
         ),
     )
     parser.add_argument(
+        "--recipe",
+        type=str,
+        default="qwen25_vl_3b_pretrain_config",
+        help=(
+            "Name of the recipe function in megatron.bridge.recipes.qwen_vl.qwen25_vl to use, "
+            "e.g., qwen25_vl_3b_pretrain_config, qwen25_vl_7b_pretrain_config."
+        ),
+    )
+    parser.add_argument(
         "--use-preloaded",
         action="store_true",
         help="Use preloaded dataset provider (enabled automatically when --data-path is set).",
@@ -113,6 +126,20 @@ def main() -> None:
 
     logger.info("Megatron-Bridge Qwen2.5-VL Pretraining Script with YAML & CLI Overrides")
     logger.info("-----------------------------------------------------------------------")
+
+    # Resolve the recipe function from the provided name
+    recipe_name = getattr(args, "recipe", "qwen25_vl_3b_pretrain_config")
+    available_recipes = [
+        name for name in dir(qwen_vl_recipes) if name.endswith("_pretrain_config")
+    ]
+    if not hasattr(qwen_vl_recipes, recipe_name):
+        logger.error(
+            "Unknown recipe '%s'. Available recipes: %s",
+            recipe_name,
+            ", ".join(sorted(available_recipes)),
+        )
+        sys.exit(2)
+    pretrain_config = getattr(qwen_vl_recipes, recipe_name)
 
     # Determine dataset type based on CLI flag (overrides) or fall back to auto-detect
     use_preloaded_flag = bool(args.data_path) or bool(getattr(args, "use_preloaded", False))
