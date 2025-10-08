@@ -190,6 +190,19 @@ class GlobalState:
 
                 import wandb
 
+                # Ensure an authenticated session without interactive prompts
+                try:
+                    api_key = os.environ.get("WANDB_API_KEY")
+                    if api_key:
+                        # Force refresh credentials to be robust across in-process restarts
+                        wandb.login(key=api_key, relogin=True)
+                    else:
+                        # Reuse any cached credentials (no prompt)
+                        wandb.login(relogin=False, force=True)
+                except Exception:
+                    # If login fails, let wandb.init surface a clear error
+                    pass
+
                 save_dir = self.cfg.logger.wandb_save_dir or os.path.join(self.cfg.checkpoint.save, "wandb")
                 wandb_kwargs = {
                     "dir": save_dir,
@@ -197,6 +210,10 @@ class GlobalState:
                     "project": self.cfg.logger.wandb_project,
                     "config": self.cfg.to_dict(),
                     "entity": self.cfg.logger.wandb_entity,
+                    # Allow re-initialization within the same process across restarts
+                    "reinit": True,
+                    # Resume if the same run name exists; otherwise create a new run
+                    "resume": "allow",
                 }
                 wandb.init(**wandb_kwargs)
 
@@ -311,6 +328,21 @@ class GlobalState:
         This cleans up all stateful components that need to be reinitialized between restart iterations.
         The async calls queue for checkpointing is handled separately in aborting in order to clean up persistent workers.
         """
+        # Finish any active W&B run to avoid leaking state across restarts
+        try:
+            if self._wandb_logger is not None:
+                run_obj = getattr(self._wandb_logger, "run", None)
+                if run_obj is not None:
+                    self._wandb_logger.finish()
+            # Always attempt teardown to clear global handlers/state
+            try:
+                import wandb as _wandb
+
+                _wandb.teardown()
+            except Exception:
+                pass
+        except Exception:
+            pass
         self._timers = None
         self._train_state = None
         self._tensorboard_logger = None
