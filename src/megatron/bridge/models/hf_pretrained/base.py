@@ -68,7 +68,7 @@ class PreTrainedBase(ABC):
 
         _ = getattr(self, "config")  # trigger lazy loading of config
         if hasattr(self, "_config") and self._config is not None:
-            if "quantization_config" in self._config:
+            if hasattr(self._config, "quantization_config"):
                 # quantized export is not supported currently
                 del self._config.quantization_config
             self._config.save_pretrained(save_path)

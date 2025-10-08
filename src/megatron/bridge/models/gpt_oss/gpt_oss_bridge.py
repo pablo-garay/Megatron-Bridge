@@ -70,7 +70,6 @@ class GPTOSSBridge(MegatronModelBridge):
         provider = GPTOSSProvider(
             num_layers=hf_config.num_hidden_layers,
             num_moe_experts=hf_config.num_local_experts,
-            generation_config=generation_config,
             # for unit tests only:
             hidden_size=hf_config.hidden_size,
             moe_ffn_hidden_size=hf_config.intermediate_size,
@@ -80,7 +79,7 @@ class GPTOSSBridge(MegatronModelBridge):
         )
         return provider
 
-    def modify_loaded_hf_weight(
+    def maybe_modify_loaded_hf_weight(
         self, hf_param: str | dict[str, str], hf_state_dict: Mapping[str, torch.Tensor]
     ) -> torch.Tensor:
         """Load weights from HuggingFace state dict and dequantize if necessary."""
@@ -107,7 +106,7 @@ class GPTOSSBridge(MegatronModelBridge):
             hf_weights = {k: hf_state_dict[v] for k, v in hf_param.items()}
         return hf_weights
 
-    def modify_converted_hf_weight(
+    def maybe_modify_converted_hf_weight(
         self, task: WeightConversionTask, converted_weights_dict: Dict[str, torch.Tensor]
     ) -> Dict[str, torch.Tensor]:
         num_experts = self.hf_config.num_local_experts
