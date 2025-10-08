@@ -128,10 +128,13 @@ class GPTOSSBridge(MegatronModelBridge):
 
             # we end up with ep_size many weights to add to the cache
             # unpack the weights and re-index
-            assert value.shape[0] == ep_size
-            for i, exp_val in enumerate(value):
-                global_expert_number = local_expert_number + (i * experts_per_rank)
-                self.hf_weights_cache[key][global_expert_number] = exp_val
+            if ep_size == 1:
+                self.hf_weights_cache[key][local_expert_number] = value
+            else:
+                assert value.shape[0] == ep_size
+                for i, exp_val in enumerate(value):
+                    global_expert_number = local_expert_number + (i * experts_per_rank)
+                    self.hf_weights_cache[key][global_expert_number] = exp_val
             if len(self.hf_weights_cache[key]) == num_experts:
                 logging.debug(f"All experts are loaded for {key}")
                 # all experts are loaded

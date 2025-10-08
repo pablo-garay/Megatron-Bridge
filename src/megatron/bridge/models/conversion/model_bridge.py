@@ -397,6 +397,7 @@ class MegatronModelBridge(Generic[HFPreTrained, ModelProviderTarget, MegatronMod
         weights of multiple experts or quantizing the weights.
 
         Args:
+            task: The WeightConversionTask object
             converted_weights_dict: The converted weights dictionary.
 
         Returns:
