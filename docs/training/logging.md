@@ -237,14 +237,7 @@ fp8_tensor_stats:
 ```python
 from bridge.training.config import TensorInspectConfig
 
-# Option 1: Reference external YAML
-cfg.tensor_inspect = TensorInspectConfig(
-    enabled=True,
-    features="./conf/fp8_inspect.yaml",
-    log_dir="./logs/tensor_inspect",
-)
-
-# Option 2: Inline dictionary
+# Option 1: inline python dict
 cfg.tensor_inspect = TensorInspectConfig(
     enabled=True,
     features={
@@ -265,6 +258,14 @@ cfg.tensor_inspect = TensorInspectConfig(
     },
     log_dir="./logs/tensor_inspect",
 )
+
+# Option 2: reference external YAML
+cfg.tensor_inspect = TensorInspectConfig(
+    enabled=True,
+    features="./conf/fp8_inspect.yaml",
+    log_dir="./logs/tensor_inspect",
+)
+
 ```
 
 #### Layer Selection
