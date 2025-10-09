@@ -90,8 +90,6 @@ def main():
             if use_tokendrop:
                 recipe.model.recompute_modules = ["mla_up_proj"]
                 recipe.model.pipeline_model_parallel_layout = "Et*4|(tttt|)*14tmL"
-            recipe.dataset.num_workers = 0
-            recipe.dataset.pin_memory = False
         if args.gpu.lower() in ["gb200", "b200"]:
             recipe.comm_overlap.overlap_grad_reduce = True
         elif args.gpu.lower() in ["h100"]:
