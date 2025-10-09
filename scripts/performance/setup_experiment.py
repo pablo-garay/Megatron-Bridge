@@ -67,6 +67,15 @@ if __name__ == "__main__":
         logger.error("Ensure the path passed to --config_file is correct.")
         sys.exit(1)
 
+    num_gpus_per_node = args.gpus_per_node
+    yaml_overrides_omega = OmegaConf.load(config_filepath)
+    preset = get_perf_matrix_overrides(yaml_overrides_omega, args)
+    if preset:
+        num_gpus_per_node = preset.get("num_gpus_per_node", args.gpus_per_node)
+        tp = preset.get("tp", 1)
+        cp = preset.get("cp", 1)
+        pp = preset.get("pp", 1)
+
     enable_deepep = bool(args.gpu.lower() in ["h100"])
     plugins = (
         [
@@ -75,6 +84,9 @@ if __name__ == "__main__":
                 nccl_pp_comm_chunksize=2097152 if args.model_size in ["70b", "405b"] else None,
                 gpu_sm100_or_newer=args.gpu.lower() in ["b200", "gb200"],
                 layernorm_sm_margin=20 if enable_deepep else 16,
+                tp_size=tp,
+                cp_size=cp,
+                pp_size=pp,
             )
         ]
         if HAS_NEMO_RUN
@@ -89,12 +101,6 @@ if __name__ == "__main__":
         f"{SCRIPT_DIR}:{SCRIPT_DIR}",
     ]
     logger.info(f"Custom mounts: {custom_mounts}")
-
-    num_gpus_per_node = args.gpus_per_node
-    yaml_overrides_omega = OmegaConf.load(config_filepath)
-    preset = get_perf_matrix_overrides(yaml_overrides_omega, args)
-    if preset:
-        num_gpus_per_node = preset.get("num_gpus_per_node", args.gpus_per_node)
 
     num_nodes = -(args.num_gpus // -num_gpus_per_node)
     executor = slurm_executor(

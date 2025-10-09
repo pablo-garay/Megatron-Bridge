@@ -91,11 +91,6 @@ def slurm_executor(
         PERF_ENV_VARS["NCCL_NET_GDR_LEVEL"] = "PHB"  # For NCCL 2.25
         PERF_ENV_VARS["NCCL_NET_GDR_C2C"] = "1"  # For NCCL 2.26
 
-    if gpu.lower() == "gb200" or gpu.lower() == "b200":
-        PERF_ENV_VARS["CUDA_DEVICE_MAX_CONNECTIONS"] = "32" #Can be set to maximum for B200/FSDP
-    elif gpu.lower() == "h100":
-        PERF_ENV_VARS["CUDA_DEVICE_MAX_CONNECTIONS"] = "1" #Need to be 1 for TP overlap kernel ordering
-
     if nemo_home != DEFAULT_NEMO_CACHE_HOME:  # DO NOT change this to 'DEFAULT_NEMO_HOME'/'NEMO_HOME'
         PERF_ENV_VARS["NEMO_HOME"] = nemo_home
         mounts.extend([f"{nemo_home}:{nemo_home}"])
