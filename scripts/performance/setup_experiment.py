@@ -122,6 +122,10 @@ if __name__ == "__main__":
             executor.env_vars["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True" # OOM if not set
     del_cudnn_ln = False
     if args.gpu.lower() in ["h100"]:
+        if args.model_name == "llama3" and args.model_size == "8b" and args.compute_dtype == "fp8":
+            if args.fp8_recipe == "cs":
+                executor.env_vars["NCCL_NVLS_ENABLE"] = "1"
+                executor.env_vars["NCCL_CTA_POLICY"] = "1"
         if args.model_name == "llama31" and args.model_size == "405b":
             del_cudnn_ln = True
         elif args.model_name == "llama3" and args.model_size == "70b" and args.compute_dtype == "bf16":
