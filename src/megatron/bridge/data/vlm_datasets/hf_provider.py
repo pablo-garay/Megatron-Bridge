@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Dataset types and providers for conversation-style VLM datasets.
+Provider that builds conversation datasets from HuggingFace datasets.
 """
 
 from dataclasses import dataclass
@@ -24,55 +24,13 @@ from transformers import AutoProcessor
 
 from megatron.bridge.training.config import DatasetBuildContext, DatasetProvider
 
-from .collate import COLLATE_FNS
+from .conversation_dataset import VLMConversationDataset
 from .hf_dataset_makers import (
     make_cord_v2_dataset,
     make_cv17_dataset,
     make_medpix_dataset,
     make_rdr_dataset,
 )
-
-
-class VLMConversationDataset(torch.utils.data.Dataset):
-    """Repeating wrapper over a list of HF-style conversation examples.
-
-    - Each base example is expected to contain a "conversation" key following
-      processor.apply_chat_template conventions. Optional modality fields like
-      "audio" are passed through and consumed by the collate function.
-    - Dataset length is set to a target length and indexes wrap around the
-      underlying list to meet the requested size.
-    - A `collate_fn` attribute is exposed so the framework can pass it to the
-      DataLoader.
-    """
-
-    def __init__(
-        self,
-        base_examples: List[Dict[str, Any]],
-        target_length: int,
-        processor: Any,
-        collate_impl: Optional[Callable[[list, Any], Dict[str, torch.Tensor]]] = None,
-    ) -> None:
-        assert isinstance(base_examples, list) and len(base_examples) > 0, "base_examples must be a non-empty list"
-        self._base_examples = base_examples
-        self._length = int(max(0, target_length))
-        self._processor = processor
-        # Choose collate implementation by processor type name when not provided
-        collate_key = type(processor).__name__ if processor is not None else "default"
-        selected_impl = collate_impl or COLLATE_FNS.get(collate_key, COLLATE_FNS["default"])  # type: ignore[index]
-
-        def _bound_collate(batch: list) -> Dict[str, torch.Tensor]:
-            return selected_impl(batch, self._processor)  # type: ignore[call-arg]
-
-        self.collate_fn = _bound_collate
-
-    def __len__(self) -> int:
-        return self._length
-
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
-        if self._length == 0:
-            raise IndexError("Empty dataset")
-        base = self._base_examples[idx % len(self._base_examples)]
-        return base
 
 
 @dataclass(kw_only=True)

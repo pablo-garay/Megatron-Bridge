@@ -116,9 +116,15 @@ def make_cv17_dataset(
 ) -> List[Dict[str, Any]]:
     """Load and preprocess the CommonVoice 17 dataset for audio-to-text fine-tuning."""
     dataset = load_dataset(path_or_dataset, split=split)
-    all_columns = dataset.column_names
-    columns_to_remove = [col for col in all_columns if col not in ["audio", "transcription"]]
-    dataset = dataset.remove_columns(columns_to_remove)
+    # Be robust to simple list-like datasets used in tests without `column_names` attr
+    try:
+        all_columns = dataset.column_names  # type: ignore[attr-defined]
+    except Exception:
+        first_example = dataset[0] if len(dataset) > 0 else {}
+        all_columns = list(first_example.keys()) if isinstance(first_example, dict) else []
+    if hasattr(dataset, "remove_columns"):
+        columns_to_remove = [col for col in all_columns if col not in ["audio", "transcription"]]
+        dataset = dataset.remove_columns(columns_to_remove)
 
     def format(example):
         return {

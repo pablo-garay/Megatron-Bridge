@@ -31,7 +31,7 @@ from PIL import Image
 
 from megatron.bridge.training.config import DatasetBuildContext, DatasetProvider
 
-from .dataset_provider import VLMConversationDataset
+from .conversation_dataset import VLMConversationDataset
 
 
 class MockVLMConversationDataset(torch.utils.data.Dataset):

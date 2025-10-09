@@ -27,25 +27,28 @@ from transformers import AutoProcessor
 
 from megatron.bridge.training.config import DatasetBuildContext, DatasetProvider
 
-from .dataset_provider import VLMConversationDataset
+from .conversation_dataset import VLMConversationDataset
 
 
 def _split_text_by_placeholders(
     text: str, image_paths: List[str], video_paths: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """
-    Convert a legacy string containing "<image>"/"<video>" markers into a structured
-    content list understood by HF processors: [{'type': 'image'|'video'|'text', ...}, ...].
+    Split legacy text containing "<image>"/"<video>" markers into an alternating
+    sequence of text and media parts, preserving the original order and spacing.
     """
     parts: List[Dict[str, Any]] = []
     img_idx = 0
     vid_idx = 0
-    cursor = 0
+
+    last_end = 0
     for match in re.finditer(r"<image>|<video>", text):
-        if match.start() > cursor:
-            segment = text[cursor : match.start()]
-            if segment:
-                parts.append({"type": "text", "text": segment})
+        # Preceding text (if any)
+        if match.start() > last_end:
+            seg = text[last_end : match.start()]
+            if seg:
+                parts.append({"type": "text", "text": seg})
+
         token = match.group(0)
         if token == "<image>":
             if img_idx >= len(image_paths):
@@ -59,10 +62,11 @@ def _split_text_by_placeholders(
             else:
                 parts.append({"type": "video", "video": video_paths[vid_idx]})
             vid_idx += 1
-        cursor = match.end()
-    # Remainder
-    if cursor < len(text):
-        tail = text[cursor:]
+        last_end = match.end()
+
+    # Trailing text (if any)
+    if last_end < len(text):
+        tail = text[last_end:]
         if tail:
             parts.append({"type": "text", "text": tail})
     return parts
@@ -126,6 +130,14 @@ def _record_to_conversation(record: Dict[str, Any], image_folder: Optional[str])
             content_str = msg.get("content", "")
 
         content_list = _split_text_by_placeholders(content_str, images, videos)
+        if content_list:
+            # Reorder to media-first followed by a single combined text segment to
+            # match typical VLM chat templates (media before text)
+            media_parts = [p for p in content_list if p.get("type") in ("image", "video")]
+            text_parts = [p.get("text", "") for p in content_list if p.get("type") == "text" and p.get("text")]
+            if text_parts:
+                media_parts.append({"type": "text", "text": "".join(text_parts)})
+            content_list = media_parts
         if not content_list:
             content_list = [{"type": "text", "text": content_str}]
         conversation.append({"role": role, "content": content_list})

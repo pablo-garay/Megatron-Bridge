@@ -63,7 +63,7 @@ def _example():
 def test_vlm_conversation_dataset_basic(monkeypatch):
     # Import locally to ensure monkeypatches apply to module under test
     import megatron.bridge.data.vlm_datasets.collate as collate
-    from megatron.bridge.data.vlm_datasets.dataset_provider import VLMConversationDataset
+    from megatron.bridge.data.vlm_datasets.conversation_dataset import VLMConversationDataset
 
     # Enable collate dependencies
     monkeypatch.setattr(collate, "HAVE_QWEN_VL_UTILS", True)
@@ -83,7 +83,7 @@ def test_hf_provider_builds_splits_and_binds_collate(monkeypatch):
     # Stub AutoProcessor.from_pretrained to avoid network
     import transformers
 
-    from megatron.bridge.data.vlm_datasets import dataset_provider as dp_mod
+    from megatron.bridge.data.vlm_datasets import hf_provider as dp_mod
 
     monkeypatch.setattr(transformers.AutoProcessor, "from_pretrained", staticmethod(lambda *a, **k: _DummyProcessor()))
 
