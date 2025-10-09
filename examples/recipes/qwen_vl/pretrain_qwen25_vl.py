@@ -129,9 +129,7 @@ def main() -> None:
 
     # Resolve the recipe function from the provided name
     recipe_name = getattr(args, "recipe", "qwen25_vl_3b_pretrain_config")
-    available_recipes = [
-        name for name in dir(qwen_vl_recipes) if name.endswith("_pretrain_config")
-    ]
+    available_recipes = [name for name in dir(qwen_vl_recipes) if name.endswith("_pretrain_config")]
     if not hasattr(qwen_vl_recipes, recipe_name):
         logger.error(
             "Unknown recipe '%s'. Available recipes: %s",

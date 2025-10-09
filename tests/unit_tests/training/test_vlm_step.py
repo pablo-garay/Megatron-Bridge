@@ -15,7 +15,7 @@
 import torch
 
 from megatron.bridge.training.utils.visual_inputs import Qwen2_5_VLVisualInputs
-from megatron.bridge.training.vlm_step import get_batch_from_iterator, get_batch, forward_step
+from megatron.bridge.training.vlm_step import forward_step, get_batch, get_batch_from_iterator
 
 
 class _Iterator:
@@ -107,7 +107,18 @@ def test_get_batch_padding_paths(monkeypatch):
 
     # Minimal cfg
     cfg = type("Cfg", (), {})()
-    cfg.model = type("M", (), {"seq_length": 32, "seq_len_interpolation_factor": 1.0, "seq_length_interpolation_factor": 1.0, "seq_length_interpolation": None, "seq_length_interpolation_power": 1.0, "pipeline_model_parallel_size": 1})()  # noqa: E501
+    cfg.model = type(
+        "M",
+        (),
+        {
+            "seq_length": 32,
+            "seq_len_interpolation_factor": 1.0,
+            "seq_length_interpolation_factor": 1.0,
+            "seq_length_interpolation": None,
+            "seq_length_interpolation_power": 1.0,
+            "pipeline_model_parallel_size": 1,
+        },
+    )()  # noqa: E501
     cfg.dataset = type("D", (), {"skip_getting_attention_mask_from_dataset": True})()
 
     # Make batch shorter than 128 to trigger ceil-to-128 padding path
@@ -177,7 +188,15 @@ def test_forward_step_schedule_plan(monkeypatch):
 
     class _State:
         def __init__(self):
-            self.cfg = type("Cfg", (), {"rerun_state_machine": type("R", (), {"check_for_nan_in_loss": False, "check_for_spiky_loss": False})()})()  # noqa: E501
+            self.cfg = type(
+                "Cfg",
+                (),
+                {
+                    "rerun_state_machine": type(
+                        "R", (), {"check_for_nan_in_loss": False, "check_for_spiky_loss": False}
+                    )()
+                },
+            )()  # noqa: E501
             self.timers = _Timer()
             self.straggler_timer = _Strag()
 
@@ -194,7 +213,15 @@ def test_forward_step_schedule_plan(monkeypatch):
     it = _Iterator(batch)
 
     # Minimal cfg for get_batch within forward_step
-    cfg = type("C2", (), {"model": type("M", (), {"seq_length": 16, "pipeline_model_parallel_size": 1})(), "dataset": type("D", (), {"skip_getting_attention_mask_from_dataset": True})(), "rerun_state_machine": type("R", (), {"check_for_nan_in_loss": False, "check_for_spiky_loss": False})()})()  # noqa: E501
+    cfg = type(
+        "C2",
+        (),
+        {
+            "model": type("M", (), {"seq_length": 16, "pipeline_model_parallel_size": 1})(),
+            "dataset": type("D", (), {"skip_getting_attention_mask_from_dataset": True})(),
+            "rerun_state_machine": type("R", (), {"check_for_nan_in_loss": False, "check_for_spiky_loss": False})(),
+        },
+    )()  # noqa: E501
 
     state = _State()
     state.cfg = cfg

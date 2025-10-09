@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 import json
 import os
 import tempfile
@@ -93,9 +92,7 @@ def test_record_to_conversation_legacy_and_llava(tmp_path):  # noqa: ARG001 - tm
 
 def test_load_and_build_provider(monkeypatch):
     # Create small jsonl
-    rows = [
-        {"messages": [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "ok"}]}
-    ]
+    rows = [{"messages": [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "ok"}]}]
     path = _write_tmp_jsonl(rows)
 
     # Stub AutoProcessor
@@ -111,5 +108,3 @@ def test_load_and_build_provider(monkeypatch):
     train_ds, valid_ds, test_ds = provider.build_datasets(ctx)
     assert train_ds is not None and len(train_ds) == 2
     assert valid_ds is None and test_ds is None
-
-

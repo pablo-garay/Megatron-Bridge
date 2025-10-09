@@ -15,8 +15,6 @@
 import json
 from types import SimpleNamespace
 
-import pytest
-
 import megatron.bridge.data.vlm_datasets.hf_dataset_makers as makers
 
 
@@ -70,5 +68,3 @@ def test_make_cv17_dataset(monkeypatch):
     _monkeypatch_load_dataset(monkeypatch, rows)
     out = makers.make_cv17_dataset()
     assert out and isinstance(out[0]["audio"], tuple)
-
-
