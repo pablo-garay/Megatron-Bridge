@@ -246,6 +246,8 @@ def setup(
         print("------- Task Configuration -------")
         cfg.to_yaml()
         print("----------------------------------")
+        with open("experiment-config.yaml", 'w') as exp_config_file:
+            exp_config_file.write(cfg.to_yaml())
 
     return SetupOutput(
         state,
