@@ -19,7 +19,6 @@ from megatron.core.optimizer import MegatronOptimizer, OptimizerConfig, get_mega
 from megatron.core.optimizer_param_scheduler import OptimizerParamScheduler
 from megatron.core.transformer.module import MegatronModule
 from megatron.bridge.training.config import SchedulerConfig
-from megatron.core import mpu
 
 def setup_optimizer(
     optimizer_config: OptimizerConfig,
