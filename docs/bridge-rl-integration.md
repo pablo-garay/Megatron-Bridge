@@ -423,7 +423,7 @@ Notes:
 
 ## 7) Minimal adapter skeleton
 
-Use this skeleton to embed Megatron-Bridge into your RL codebase. Fill in the config mapping, microbatching, and loss logic.
+Use this skeleton to embed Megatron Bridge into your RL codebase. Fill in the config mapping, microbatching, and loss logic.
 
 ```python
 import torch
