@@ -38,7 +38,7 @@ AutoBridge.import_ckpt(
 )
 ```
 
-Or, with explicit provider and parallelism settings (similar to `community_import.py`):
+Or, with explicit provider and parallelism settings (similar to [nemo_rl/models/megatron/community_import.py](https://github.com/NVIDIA-NeMo/RL/blob/main/nemo_rl/models/megatron/community_import.py)):
 
 ```python
 from megatron.bridge import AutoBridge
@@ -59,6 +59,9 @@ provider.finalize()
 megatron_model = provider.provide_distributed_model(wrap_with_ddp=False)
 bridge.save_megatron_model(megatron_model, "/path/to/megatron_ckpt")
 ```
+
+You can also check and try out our multi-GPU conversion example script: [examples/conversion/hf_megatron_roundtrip_multi_gpu.py](../examples/conversion/hf_megatron_roundtrip_multi_gpu.py)
+
 
 Notes:
 - The import-time parallelism is only for loading/conversion. The saved config is restored to canonical values to avoid validation issues at training time.
