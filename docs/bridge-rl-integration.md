@@ -72,7 +72,7 @@ Notes:
 
 ## 2) Build training configuration and initialize Megatron-Core
 
-Translate your RL framework config into Megatron-Core’s `ConfigContainer` for model, optimizer, scheduler, DDP, tokenizer, and checkpoints.
+Translate your RL framework config into Megatron Bridge's `ConfigContainer` for model, optimizer, scheduler, DDP, tokenizer, and checkpoints.
 
 ```python
 import torch
