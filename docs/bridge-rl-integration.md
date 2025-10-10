@@ -38,7 +38,7 @@ AutoBridge.import_ckpt(
 )
 ```
 
-Or, with explicit provider and parallelism settings (similar to `community_import.py`):
+Or, with explicit provider and parallelism settings (similar to [nemo_rl/models/megatron/community_import.py](https://github.com/NVIDIA-NeMo/RL/blob/main/nemo_rl/models/megatron/community_import.py)):
 
 ```python
 from megatron.bridge import AutoBridge
