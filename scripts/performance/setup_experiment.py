@@ -75,7 +75,7 @@ if __name__ == "__main__":
         if args.compute_dtype.lower() == "fp8":
             recipe_key = str(args.compute_dtype) + "_" + str(args.fp8_recipe)
         else:
-            str(args.compute_dtype)
+            recipe_key = str(args.compute_dtype)
         recipe_dict = preset.get(recipe_key)
 
         num_gpus_per_node = common_dict.get("num_gpus_per_node", args.gpus_per_node)
