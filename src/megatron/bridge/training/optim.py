@@ -18,7 +18,6 @@ import torch.nn as nn
 from megatron.core.optimizer import MegatronOptimizer, OptimizerConfig, get_megatron_optimizer, get_megatron_muon_optimizer
 from megatron.core.optimizer_param_scheduler import OptimizerParamScheduler
 from megatron.core.transformer.module import MegatronModule
-from megatron.core.optimizer.layer_wise_optimizer import get_shower_optimizer_for_mcore
 from megatron.bridge.training.config import SchedulerConfig
 from megatron.core import mpu
 
@@ -55,25 +54,15 @@ def setup_optimizer(
             use_gloo_process_groups=use_gloo_process_groups,
         )
     else:
-        if "dist" in optimizer_config.optimizer:
-            optimizer = get_shower_optimizer_for_mcore(
-                model, optimizer_config,
-                pg_collection={
-                    "dp_cp": mpu.get_data_parallel_group(True),
-                    "tp": mpu.get_tensor_model_parallel_group(),
-                    "expt_dp": mpu.get_expert_data_parallel_group()},
-                linear_optimizer=optimizer_config.optimizer.replace("dist_", ""),
-                split_qkv=False, # TODO
-            )
-        else:
-            optimizer = get_megatron_muon_optimizer(
-                optimizer_config,
-                model,
-                no_weight_decay_cond,
-                scale_lr_cond,
-                lr_mult,
-                use_gloo_process_groups=use_gloo_process_groups,
-            )
+        optimizer = get_megatron_muon_optimizer(
+            optimizer_config,
+            model,
+            no_weight_decay_cond,
+            scale_lr_cond,
+            lr_mult,
+            use_gloo_process_groups=use_gloo_process_groups,
+            layer_wise_distributed_optimizer='dist' in optimizer_config.optimizer,
+        )
 
     scheduler = _get_scheduler(optimizer_config, scheduler_config, optimizer)
 
