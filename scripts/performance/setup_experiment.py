@@ -71,10 +71,17 @@ if __name__ == "__main__":
     yaml_overrides_omega = OmegaConf.load(config_filepath)
     preset = get_perf_matrix_overrides(yaml_overrides_omega, args)
     if preset:
-        num_gpus_per_node = preset.get("num_gpus_per_node", args.gpus_per_node)
-        tp = preset.get("tp", 1)
-        cp = preset.get("cp", 1)
-        pp = preset.get("pp", 1)
+        common_dict = preset.get("common")
+        if args.compute_dtype.lower() == "fp8":
+            recipe_key = str(args.compute_dtype) + "_" + str(args.fp8_recipe)
+        else:
+            str(args.compute_dtype)
+        recipe_dict = preset.get(recipe_key)
+
+        num_gpus_per_node = common_dict.get("num_gpus_per_node", args.gpus_per_node)
+        tp = common_dict.get("tp", recipe_dict.get("tp",1))
+        cp = common_dict.get("cp", recipe_dict.get("cp",1))
+        pp = common_dict.get("pp", recipe_dict.get("pp",1))
 
     enable_deepep = bool(args.gpu.lower() in ["h100"])
     plugins = (
