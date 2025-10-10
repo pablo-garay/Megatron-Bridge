@@ -11,6 +11,8 @@ The examples mirror how NeMo-RL integrates Megatron Bridge:
 - [nemo_rl/models/megatron/community_import.py](https://github.com/NVIDIA-NeMo/RL/blob/main/nemo_rl/models/megatron/community_import.py)
 - [nemo_rl/models/policy/megatron_policy_worker.py](https://github.com/NVIDIA-NeMo/RL/blob/main/nemo_rl/models/policy/megatron_policy_worker.py)
 
+- Local example script in this repo: [examples/rl/rlhf_with_bridge.py](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/examples/rl/rlhf_with_bridge.py)
+
 
 ## Prerequisites
 
@@ -60,7 +62,7 @@ megatron_model = provider.provide_distributed_model(wrap_with_ddp=False)
 bridge.save_megatron_model(megatron_model, "/path/to/megatron_ckpt")
 ```
 
-You can also check and try out our multi-GPU conversion example script: [examples/conversion/hf_megatron_roundtrip_multi_gpu.py](../examples/conversion/hf_megatron_roundtrip_multi_gpu.py)
+You can also check and try out our multi-GPU conversion example script: [examples/conversion/hf_megatron_roundtrip_multi_gpu.py](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/examples/conversion/hf_megatron_roundtrip_multi_gpu.py)
 
 
 Notes:
@@ -325,15 +327,15 @@ for name, weight in bridge.export_hf_weights(megatron_model, cpu=True, show_prog
 
 Point your inference engine (e.g., vLLM) to `"/path/to/hf_export"`.
 
-### B) Zero-copy streaming via IPC handles (fast refit, colocated)
+### B) Zero-copy streaming via ZMQ (fast refit, colocated)
 
-Export tensors on the training side without writing to disk, and pass device IPC handles to your inference runtime. This mirrors `prepare_refit_info`, `prepare_weights_for_ipc`, and `get_weights_ipc_handles` patterns.
+Stream tensors from the training side to your inference runtime without writing to disk. The transport is ZMQ peer-to-peer with async send/recv and ping‑pong buffers for overlap; Ray is used only for lightweight coordination. This replaces the earlier ad‑hoc per‑tensor IPC handle passing and aligns with the refactor in [NVIDIA-NeMo/RL#1267](https://github.com/NVIDIA-NeMo/RL/pull/1267).
 
 **Concepts (how the plan and chunking work):**
+- **Transport and overlap:** ZMQ P2P streaming with asynchronous send/recv and ping‑pong buffers enables overlap between gathering and applying weights.
 - **Conversion tasks (planning):** `bridge.get_conversion_tasks([model])` returns an ordered list of per-parameter conversion tasks that encode how to transform sharded Megatron weights (TP/PP/MoE/CP) back to HF tensors. The worker stores this in `self.refit_conversion_tasks` and advances a cursor (`self.refit_conversion_tasks_current_index`) as chunks are streamed. See `nemo_rl/models/policy/megatron_policy_worker.py` methods `prepare_refit_info()`, `_calculate_refit_param_info()`, and `get_weights_ipc_handles()`.
 - **Size estimation across PP ranks:** Parameters are only materialized on their owning PP rank. The worker computes per-parameter byte sizes and then broadcasts those sizes to all PP ranks so the entire pipeline can agree on chunk boundaries. See `broadcast_object_across_pp_ranks()` and `_calculate_refit_param_info()` in `megatron_policy_worker.py`.
-- **Memory-aware chunking:** Use your free GPU memory budget (e.g., `NRL_REFIT_BUFFER_MEMORY_RATIO`) to decide how many parameters to include in the next chunk (the set of `keys`). The worker exposes `prepare_weights_for_ipc()` which returns `(param_info, total_available_bytes)` and resets the conversion cursor; then the controller repeatedly selects `keys` whose cumulative byte size ≤ budget and calls `get_weights_ipc_handles(keys=...)`.
-- **IPC packing threshold:** For small chunks, export per-tensor IPC handles; for large chunks, pack tensors per-dtype into consolidated buffers to reduce handle count and copy overhead. Tuned via `NEMO_RL_MEGATRON_IPC_TENSOR_PACKING_THRESHOLD`. The worker keeps strong references to packed buffers to prevent GC until the consumer maps the handles.
+- **Memory-aware chunking:** Use your free GPU memory budget (e.g., `NRL_REFIT_BUFFER_MEMORY_RATIO`) to decide how many parameters to include in the next chunk (the set of `keys`). The worker exposes `prepare_weights_for_ipc()` which returns `(param_info, total_available_bytes)` and resets the conversion cursor; then the controller repeatedly selects `keys` whose cumulative byte size ≤ budget and streams them to the consumer over ZMQ.
 - **Device routing:** Handles are returned under a `device_uuid` key (NVML UUID of the CUDA device). The inference side should map handles on the same device (or coordinate via your communicator). For collective updates, the worker can also broadcast tensors directly (`broadcast_weights_for_collective`).
 - **Parallelism nuances:** With TP/EP, exported HF tensors are reassembled from shards; with CP/sequence packing, shapes/dtypes are already consistent at export time. FP8 or mixed precision can affect size estimates; the worker accounts for dtype scaling when estimating bytes.
 
@@ -356,66 +358,34 @@ free_bytes = get_free_memory_bytes(torch.cuda.current_device())
 ratio = float(os.getenv("NRL_REFIT_BUFFER_MEMORY_RATIO", "0.2"))
 allowed_bytes = int(free_bytes * ratio)
 
-# 3) Export in packs and create IPC handles
-from nemo_rl.models.policy.utils import get_handle_from_tensor  # or your equivalent
+# 3) Stream chunks over ZMQ
 from nemo_rl.utils.nvml import get_device_uuid
 
 # Build conversion tasks once and advance an index as you stream
 refit_conversion_tasks = bridge.get_conversion_tasks([model])
 refit_tasks_current_index = 0
 
-def export_handles_for_next_keys(keys: list[str]):
+def stream_next_chunk(keys: list[str]):
+    """Yield ZMQ multipart frames for this chunk.
+    Frames typically include: (metadata_json_bytes, payload_bytes).
+    """
     global refit_tasks_current_index
-    # Slice the next chunk of conversion tasks aligned with your planning
     conversion_tasks = refit_conversion_tasks[
         refit_tasks_current_index : refit_tasks_current_index + len(keys)
     ]
     refit_tasks_current_index += len(keys)
 
-    # Export only the requested tensors for these tasks
-    hf_params_generator = bridge.export_hf_weights(
-        [model], show_progress=False, conversion_tasks=conversion_tasks
-    )
-    gathered_hf_params = {name: tensor for name, tensor in hf_params_generator}
-
-    # Identify device for IPC routing
     device_uuid = get_device_uuid(torch.cuda.current_device())
 
-    # Decide per-tensor vs packed-buffer
-    threshold = int(os.getenv("NEMO_RL_MEGATRON_IPC_TENSOR_PACKING_THRESHOLD", "32"))
-    if len(gathered_hf_params) >= threshold:
-        # Pack tensors per dtype into consolidated buffers
-        type_to_total = defaultdict(int)
-        for t in gathered_hf_params.values():
-            type_to_total[t.dtype] += t.numel()
+    # Worker exposes a streaming generator that overlaps gather and send
+    for frames in worker.stream_refit_chunks(
+        conversion_tasks=conversion_tasks, device_uuid=device_uuid
+    ):
+        yield frames  # send via zmq_socket.send_multipart(frames)
 
-        packed = {
-            dtype: torch.empty(
-                total, device=next(iter(gathered_hf_params.values())).device, dtype=dtype
-            )
-            for dtype, total in type_to_total.items()
-        }
-        offsets = defaultdict(int)
-        for name, t in gathered_hf_params.items():
-            flat = t.detach().view(-1)
-            start = offsets[t.dtype]
-            packed[t.dtype][start : start + flat.numel()].copy_(flat)
-            offsets[t.dtype] += flat.numel()
-
-        handles = [(dtype, get_handle_from_tensor(buf)) for dtype, buf in packed.items()]
-        # Keep refs to prevent GC while the inference side maps handles
-        held_buffers = packed
-        serialized = (True, handles, tuple(gathered_hf_params.keys()))
-    else:
-        handles = [(name, get_handle_from_tensor(t)) for name, t in gathered_hf_params.items()]
-        held_buffers = gathered_hf_params
-        serialized = (False, handles)
-
-    return {device_uuid: serialized}, held_buffers
-
-# Example usage
-ipc_payload, held = export_handles_for_next_keys(list(refit_param_info_hf.keys()))
-# Send ipc_payload (per-device dict) to inference side along with device UUID; retain 'held' locally until transfer completes
+# Example usage (producer)
+for frames in stream_next_chunk(list(refit_param_info_hf.keys())):
+    zmq_socket.send_multipart(frames)
 ```
 
 **Chunking in practice (controller-side selection of keys):**
@@ -439,15 +409,15 @@ while cursor < len(param_info):
         cursor += 1
 
     # Stream this chunk and consume on the inference side
-    ipc_payload = worker.get_weights_ipc_handles(keys=batch_keys)
-    send_to_inference(ipc_payload)  # your transport
-    # Keep local references alive until inference confirms mapping
-    # (the worker holds buffers internally; implement your own lifecycle if externalized)
+    for frames in worker.stream_refit_chunks(keys=batch_keys):
+        zmq_socket.send_multipart(frames)
 ```
 
 Environment knobs:
 - `NRL_REFIT_BUFFER_MEMORY_RATIO` (default `0.2`) — fraction of free GPU memory to plan staging
-- `NEMO_RL_MEGATRON_IPC_TENSOR_PACKING_THRESHOLD` (default `32`) — switch between per-tensor vs packed-buffer IPC
+
+Notes:
+- The packing decision is handled internally by the backend; the `NEMO_RL_MEGATRON_IPC_TENSOR_PACKING_THRESHOLD` knob is deprecated in favor of the unified ZMQ streaming path introduced in [NVIDIA-NeMo/RL#1267](https://github.com/NVIDIA-NeMo/RL/pull/1267).
 
 
 
@@ -523,8 +493,8 @@ class MegatronBridgeAdapter:
 - Parallelism
   - If `context_parallel_size > 1`, enable sequence packing. Use packed logprob reducers.
   - With FP8, pad to hardware-friendly multiples (e.g., lcm(16, 2 × TP × CP)).
-- Optimizer offload
-  - Hybrid offload (split GPU/CPU) is not supported by many RL schedulers; if offloading, set `optimizer_offload_fraction = 1.0`.
+- Offloading
+  - TBA
 - MoE router stability
   - Consider freezing router weights and disabling router load balancing to reduce training instability (see `freeze_moe_router`, `moe_router_bias_update_rate=0.0`).
 - Hooks
@@ -535,6 +505,6 @@ class MegatronBridgeAdapter:
 
 ## See also
 
-- `3rdparty/Megatron-Bridge-workspace/Megatron-Bridge/docs/bridge-guide.md` for HF↔Megatron conversion overview
+- [Bridge with 🤗 Hugging Face](./bridge-guide.md) for HF↔Megatron conversion overview
 - [nemo_rl/models/megatron/community_import.py](https://github.com/NVIDIA-NeMo/RL/blob/main/nemo_rl/models/megatron/community_import.py) for import/export helpers
 - [nemo_rl/models/policy/megatron_policy_worker.py](https://github.com/NVIDIA-NeMo/RL/blob/main/nemo_rl/models/policy/megatron_policy_worker.py) for end-to-end RL integration (training, logprobs, generation, refit)
