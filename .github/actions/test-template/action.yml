@@ -190,6 +190,7 @@ runs:
       uses: actions/checkout@v2
       with:
         path: ${{ github.workspace }}/Megatron-Bridge
+        submodules: recursive
 
     - name: Cache uv
       uses: actions/cache@v4
@@ -329,7 +330,7 @@ runs:
           coverage.xml
           .coverage
         include-hidden-files: true
-    
+
     - name: Container shutdown
       if: always()
       shell: bash
