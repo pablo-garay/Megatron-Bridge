@@ -416,10 +416,6 @@ while cursor < len(param_info):
 Environment knobs:
 - `NRL_REFIT_BUFFER_MEMORY_RATIO` (default `0.2`) — fraction of free GPU memory to plan staging
 
-Notes:
-- The packing decision is handled internally by the backend; the `NEMO_RL_MEGATRON_IPC_TENSOR_PACKING_THRESHOLD` knob is deprecated in favor of the unified ZMQ streaming path introduced in [NVIDIA-NeMo/RL#1267](https://github.com/NVIDIA-NeMo/RL/pull/1267).
-
-
 
 ## 7) Minimal adapter skeleton
 
