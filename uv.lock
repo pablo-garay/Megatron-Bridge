@@ -2003,7 +2003,7 @@ test = [
 requires-dist = [
     { name = "datasets" },
     { name = "hydra-core", specifier = ">1.3,<=1.3.2" },
-    { name = "megatron-core", extras = ["dev", "mlm"], specifier = ">=0.14.0a0,<0.16.0" },
+    { name = "megatron-core", extras = ["dev", "mlm"], directory = "3rdparty/Megatron-LM" },
     { name = "nemo-run", marker = "extra == 'recipes'", specifier = ">=0.5.0a0,<0.6.0" },
     { name = "omegaconf", specifier = ">=2.3.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },
@@ -2053,27 +2053,16 @@ test = [
 
 [[package]]
 name = "megatron-core"
-version = "0.15.0rc6"
-source = { registry = "https://pypi.org/simple" }
+source = { directory = "3rdparty/Megatron-LM" }
 dependencies = [
     { name = "numpy" },
     { name = "packaging" },
     { name = "torch" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/79/78/e242edd3de43c972bd51df67b929f261f032d1feb21fa8df92e2cd07bf16/megatron_core-0.15.0rc6.tar.gz", hash = "sha256:78304a0baad5eca619fbe98af737e54f821a773279127c567eae88564bd6c3fa", size = 859520, upload-time = "2025-09-29T04:11:29.252Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/56/11434370cd4cb2c1892553555024cd3ac4f8881993c588ae8e20d1c9fa15/megatron_core-0.15.0rc6-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b16346d409eed5534c888c10f3f02aa5424d2b6c9fa7c6716c50fb8a2a02b815", size = 2185653, upload-time = "2025-09-29T04:11:14.947Z" },
-    { url = "https://files.pythonhosted.org/packages/a6/7e/14ff76e05128c76bccc01ea77b703bae7f1c37c23269e2bf7cdeb0d36329/megatron_core-0.15.0rc6-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:cb01923b9458ac79791256cd3ed41974686e98bdb5f75f218e48b84bccbc1b13", size = 2217006, upload-time = "2025-09-29T04:11:16.513Z" },
-    { url = "https://files.pythonhosted.org/packages/de/2b/6be96e2c16763262b197c200a1c05d831f1aec511ca7419c37da95c0ebe0/megatron_core-0.15.0rc6-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:4bd4414f90afea99b491a1a944e50c128fbd9c307c6ca5d5c36921bcfdbbcde1", size = 2196824, upload-time = "2025-09-29T04:11:18.225Z" },
-    { url = "https://files.pythonhosted.org/packages/c9/4e/98860a923a2dbc01a929488d09eb6ba1e2731c417cd01766aeb5dce1c666/megatron_core-0.15.0rc6-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:571764435836af6a2e74daec50834196abfbb6df9e09d3a6952f8e65700c8b9d", size = 2228557, upload-time = "2025-09-29T04:11:19.543Z" },
-    { url = "https://files.pythonhosted.org/packages/8e/83/8d3011f6479d41f436e2bd631fe21e668a13dca0e9533cf59f6b28bc21ac/megatron_core-0.15.0rc6-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:5b477724bcfa6e9720b0e6b6b47ab49dfbbb02ed9835c582df33b469b1a9fb63", size = 2217415, upload-time = "2025-09-29T04:11:21.009Z" },
-    { url = "https://files.pythonhosted.org/packages/e8/44/323125fa5c5e56cf2368ce64dd2e6e6d4adc7b68976cfae24cd7706d9e36/megatron_core-0.15.0rc6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:d9496c6f65c14f3ad58745b25177a8449b4865e8051c7e2935569d6cbb015717", size = 2241334, upload-time = "2025-09-29T04:11:22.737Z" },
-    { url = "https://files.pythonhosted.org/packages/7c/84/268e922e844680505cec386f2cb3679c2594e5c5316fd84c209603571a85/megatron_core-0.15.0rc6-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:cd952e57a9b73b0d3df506e55e2db9def7ea5f7b148c00d88bac3347e39c3751", size = 2216220, upload-time = "2025-09-29T04:11:24.43Z" },
-    { url = "https://files.pythonhosted.org/packages/1f/1a/802a425c3e1f821b94659095ae73fa7043249e3eb57f612c6de6e3af0740/megatron_core-0.15.0rc6-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4fd74c5fbe318273df3ecd21cf6cda7cce4c86ad438637e58cca39cd35e57aa4", size = 2242035, upload-time = "2025-09-29T04:11:25.637Z" },
-]
 
 [package.optional-dependencies]
 dev = [
+    { name = "av" },
     { name = "causal-conv1d" },
     { name = "einops" },
     { name = "flashinfer-python" },
@@ -2099,6 +2088,92 @@ mlm = [
     { name = "tiktoken" },
     { name = "transformers" },
     { name = "wandb" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "av", marker = "extra == 'dev'", specifier = "<16.0.0" },
+    { name = "causal-conv1d", marker = "extra == 'dev'", specifier = "~=1.5" },
+    { name = "einops", marker = "extra == 'dev'", specifier = "~=0.8" },
+    { name = "einops", marker = "extra == 'lts'" },
+    { name = "flashinfer-python", marker = "extra == 'dev'" },
+    { name = "flask-restful", marker = "extra == 'mlm'" },
+    { name = "mamba-ssm", marker = "extra == 'dev'", specifier = "~=2.2" },
+    { name = "megatron-energon", extras = ["av-decode"], marker = "extra == 'dev'", specifier = "~=6.0" },
+    { name = "multi-storage-client", marker = "extra == 'dev'", specifier = "~=0.27" },
+    { name = "numpy", specifier = "<2.0.0" },
+    { name = "nv-grouped-gemm", marker = "extra == 'dev'", specifier = "~=1.1" },
+    { name = "nvidia-modelopt", extras = ["torch"], marker = "sys_platform != 'darwin' and extra == 'dev'", specifier = ">=0.33.0a0,<0.34.0" },
+    { name = "nvidia-resiliency-ext", marker = "extra == 'dev'", specifier = ">=0.4.0a0,<0.5.0" },
+    { name = "nvtx", marker = "extra == 'dev'", specifier = "~=0.2" },
+    { name = "nvtx", marker = "extra == 'lts'" },
+    { name = "onnxscript", marker = "extra == 'dev'" },
+    { name = "opentelemetry-api", marker = "extra == 'dev'", specifier = "~=1.33.1" },
+    { name = "packaging", specifier = ">=24.2" },
+    { name = "sentencepiece", marker = "extra == 'mlm'" },
+    { name = "setuptools", marker = "extra == 'dev'", specifier = "<80.0.0" },
+    { name = "setuptools", marker = "extra == 'lts'", specifier = "<80.0.0" },
+    { name = "tensorstore", marker = "extra == 'dev'", specifier = "~=0.1,!=0.1.46,!=0.1.72" },
+    { name = "tensorstore", marker = "extra == 'lts'", specifier = "!=0.1.46,!=0.1.72" },
+    { name = "tiktoken", marker = "extra == 'mlm'" },
+    { name = "torch" },
+    { name = "tqdm", marker = "extra == 'dev'" },
+    { name = "tqdm", marker = "extra == 'lts'" },
+    { name = "transformer-engine", extras = ["pytorch"], marker = "extra == 'dev'", specifier = ">=2.6.0a0,<2.8.0" },
+    { name = "transformers", marker = "extra == 'lts'" },
+    { name = "transformers", marker = "extra == 'mlm'" },
+    { name = "wandb", marker = "extra == 'mlm'" },
+    { name = "wget", marker = "extra == 'dev'" },
+    { name = "wget", marker = "extra == 'lts'" },
+    { name = "zarr", marker = "extra == 'lts'" },
+]
+provides-extras = ["mlm", "dev", "lts"]
+
+[package.metadata.requires-dev]
+build = [
+    { name = "cython", specifier = ">=3.0.0" },
+    { name = "hatchling" },
+    { name = "packaging", specifier = ">=24.2" },
+    { name = "pybind11" },
+    { name = "setuptools", specifier = "<80.0.0" },
+    { name = "torch" },
+]
+ci = [
+    { name = "pandas" },
+    { name = "python-gitlab" },
+    { name = "slack-sdk" },
+]
+docs = [
+    { name = "myst-parser" },
+    { name = "nvidia-sphinx-theme" },
+    { name = "sphinx" },
+    { name = "sphinx-autobuild" },
+    { name = "sphinx-autodoc2" },
+    { name = "sphinx-copybutton" },
+]
+emerging-optimizers = [{ name = "emerging-optimizers", git = "https://github.com/NVIDIA-NeMo/Emerging-Optimizers.git?rev=fb1add873e7851ec34b48581ea1b15761b73d189" }]
+flash-mla = [{ name = "flash-mla", git = "https://github.com/deepseek-ai/FlashMLA?rev=9edee0c022cd0938148a18e334203b0aab43aa19" }]
+linting = [
+    { name = "black", specifier = "==24.4.2" },
+    { name = "flake8", specifier = "==7.1.0" },
+    { name = "isort", specifier = "==5.13.2" },
+    { name = "pylint", specifier = "==3.2.6" },
+    { name = "ruff", specifier = "~=0.9.0" },
+]
+test = [
+    { name = "coverage" },
+    { name = "nemo-run" },
+    { name = "nltk" },
+    { name = "pydantic" },
+    { name = "pygithub" },
+    { name = "pytest", specifier = "==8.3.5" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "pytest-random-order" },
+    { name = "pyyaml" },
+    { name = "tensorboard" },
+    { name = "wrapt" },
 ]
 
 [[package]]
