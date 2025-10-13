@@ -98,13 +98,13 @@ jobs:
       - name: Upload lock file
         uses: actions/upload-artifact@v4
         with:
-          name: lock-file-${{ env.SOURCE_BRANCH }}
+          name: lock-file-test-submodules
           path: uv.lock
 
       - name: Update submodules
         uses: actions/upload-artifact@v4
         with:
-          name: submodules-${{ env.SOURCE_BRANCH }}
+          name: submodules-test-submodules
           path: 3rdparty/Megatron-LM
 
   create-pr:
@@ -143,12 +143,12 @@ jobs:
       - name: Download lock file
         uses: actions/download-artifact@v4
         with:
-          name: lock-file-${{ env.SOURCE_BRANCH }}
+          name: lock-file-test-submodules
 
       - name: Download submodules
         uses: actions/download-artifact@v4
         with:
-          name: submodules-${{ env.SOURCE_BRANCH }}
+          name: submodules-test-submodules
 
       - name: Create Bump PR
         uses: peter-evans/create-pull-request@v6
