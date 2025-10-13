@@ -33,7 +33,7 @@ jobs:
       matrix:
         include:
           - target-branch: ${{ needs.get-release-branch-names.outputs.megatron-bridge }}
-          - target-branch: main
+          - target-branch: ko3n1g/chore/add-submodule # main
     uses: ./.github/workflows/_update_dependencies.yml
     with:
       target-branch: ${{ matrix.target-branch }}
