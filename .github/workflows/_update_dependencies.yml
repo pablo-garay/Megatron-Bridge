@@ -32,7 +32,7 @@ jobs:
         run: echo "date=$(date +%F)" | tee -a "$GITHUB_OUTPUT"
 
   update-lockfile:
-    environment: nemo-ci
+    environment: main
     runs-on: linux-amd64-cpu16
     needs: [pre-flight]
     env:
