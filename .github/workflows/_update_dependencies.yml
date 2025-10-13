@@ -107,20 +107,6 @@ jobs:
           name: submodules-test-submodules
           path: 3rdparty/Megatron-LM
 
-  create-pr:
-    needs: [update-lockfile, pre-flight]
-    runs-on: ubuntu-latest
-    environment: main
-    env:
-      SOURCE_BRANCH: ${{ needs.pre-flight.outputs.bump-branch }}
-      TARGET_BRANCH: ${{ inputs.target-branch }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PAT }}
-          ref: ${{ env.TARGET_BRANCH }}
-
       - name: Install GPG
         run: sudo apt-get install -y gnupg2
 
@@ -139,16 +125,6 @@ jobs:
             git fetch origin ${{ env.SOURCE_BRANCH }}
             git rebase -S origin/${{ env.SOURCE_BRANCH }}
           fi
-
-      - name: Download lock file
-        uses: actions/download-artifact@v4
-        with:
-          name: lock-file-test-submodules
-
-      - name: Download submodules
-        uses: actions/download-artifact@v4
-        with:
-          name: submodules-test-submodules
 
       - name: Create Bump PR
         uses: peter-evans/create-pull-request@v6
