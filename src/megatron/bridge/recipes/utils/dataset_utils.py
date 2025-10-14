@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from typing import List, Optional, Tuple
-from megatron.bridge.training.config import GPTDatasetConfig
 
 from megatron.bridge.data.loaders import get_blend_and_blend_per_split
+from megatron.bridge.training.config import GPTDatasetConfig
 
 
 _BLEND_TYPE = Optional[Tuple[List[str], Optional[List[float]]]]
@@ -87,11 +87,11 @@ def get_blend_fields_from_data_paths(
 
 
 def get_pretrain_dataset(
-    seq_length: int, 
-    blend: _BLEND_TYPE, 
-    blend_per_split: _BLEND_PER_SPLIT_TYPE, 
-    split: _SPLIT_TYPE
+    seq_length: int, blend: _BLEND_TYPE, blend_per_split: _BLEND_PER_SPLIT_TYPE, split: _SPLIT_TYPE
 ):
+    """
+    Get a GPTDatasetConfig object for pretraining.
+    """
     return GPTDatasetConfig(
         random_seed=1234,
         reset_attention_mask=False,
