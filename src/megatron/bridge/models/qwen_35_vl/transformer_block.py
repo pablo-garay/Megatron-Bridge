@@ -16,10 +16,8 @@ from megatron.core.enums import Fp8Recipe
 from megatron.core.fp8_utils import get_fp8_context
 from megatron.core.inference.contexts import BaseInferenceContext
 from megatron.core.packed_seq_params import PackedSeqParams
-from megatron.core.process_groups_config import ModelCommProcessGroups
 from megatron.core.utils import WrappedTensor, deprecate_inference_params, make_viewless_tensor
-from megatron.core.transformer.spec_utils import ModuleSpec
-from megatron.core.transformer.transformer_block import TransformerBlock, TransformerBlockSubmodules
+from megatron.core.transformer.transformer_block import TransformerBlock
 
 try:
     import transformer_engine.pytorch as te  # pylint: disable=unused-import
