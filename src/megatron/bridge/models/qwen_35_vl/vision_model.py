@@ -33,5 +33,8 @@ class Qwen3VLVisionModel(MegatronModule):
             
 
         """
-        hidden_states, deepstack_feature_lists = self.vision_model(pixel_values, grid_thw, **kwargs)
-        return hidden_states, deepstack_feature_lists
+        image_embeds, deepstack_feature_lists = self.vision_model(pixel_values, grid_thw, **kwargs)
+        # split_sizes = (grid_thw.prod(-1) // self.vision_model.spatial_merge_size**2).tolist()
+        # image_embeds = torch.split(image_embeds, split_sizes)
+        # image_embeds = torch.cat(image_embeds, dim=0)
+        return image_embeds, deepstack_feature_lists
