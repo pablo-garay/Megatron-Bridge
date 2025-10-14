@@ -19,8 +19,8 @@ class Qwen3VLTextRotaryEmbedding(Qwen3VLMoeTextRotaryEmbedding):
         """
         seq = position_ids.to(device=self.inv_freq.device, dtype=self.inv_freq.dtype)
 
-        if self.seq_len_interpolation_factor is not None:
-            seq *= 1 / self.seq_len_interpolation_factor
+        # if self.seq_len_interpolation_factor is not None:
+        #     seq *= 1 / self.seq_len_interpolation_factor
 
         # shape (3, bs, dim, 1)
         inv_freq_expanded = self.inv_freq[None, None, :, None].expand(3, seq.shape[1], -1, 1)
