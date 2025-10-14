@@ -69,12 +69,13 @@ def default_squad_config(seq_length: int, packed_sequence: bool = False) -> HFDa
         # Packed sequence configuration
         dataset_kwargs = {"pad_to_max_length": True}
         packed_sequence_specs = PackedSequenceSpecs(packed_sequence_size=seq_length)
-        dataloader_type = "cyclic"  # Better for packed sequences
     else:
         # Standard configuration
         dataset_kwargs = {}
         packed_sequence_specs = None
-        dataloader_type = "batch"  # Good for finetuning
+
+    # Preserve default 'batch' behavior to keep sampler composition unchanged
+    dataloader_type = "batch"
 
     return HFDatasetConfig(
         dataset_name="squad",

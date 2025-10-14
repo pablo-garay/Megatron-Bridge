@@ -405,7 +405,7 @@ def _qwen3_finetune_common(
 
     # Create model config
     bridge = AutoBridge.from_hf_pretrained(hf_path)
-    model_cfg = bridge.to_megatron_provider()
+    model_cfg = bridge.to_megatron_provider(load_weights=False)
     model_cfg.tensor_model_parallel_size = tensor_parallelism
     model_cfg.pipeline_model_parallel_size = pipeline_parallelism
     model_cfg.pipeline_dtype = pipeline_parallelism_dtype
@@ -420,10 +420,17 @@ def _qwen3_finetune_common(
         model_cfg.recompute_method = "uniform"
         model_cfg.recompute_num_layers = 1
 
+    # use lower LR for full finetuning, higher LR for PEFT
+    if peft is None or (isinstance(peft, str) and peft.lower() == "none"):
+        effective_finetune_lr = 5e-6
+    else:
+        # lora/dora or custom peft
+        effective_finetune_lr = 1e-4 if finetune_lr is None else finetune_lr
+
     opt_cfg, scheduler_cfg = distributed_fused_adam_with_cosine_annealing(
         lr_warmup_iters=lr_warmup_iters,
         lr_decay_iters=lr_decay_iters,  # None is fine
-        max_lr=finetune_lr,
+        max_lr=effective_finetune_lr,
         min_lr=min_lr,
         adam_beta2=0.98,
     )

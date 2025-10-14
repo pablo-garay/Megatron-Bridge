@@ -47,7 +47,10 @@ def get_packed_seq_params(batch: dict[str, torch.Tensor]) -> PackedSeqParams:
     # remove -1 "paddings" added in collate_fn
     if (cu_seqlens_argmin := batch.get("cu_seqlens_argmin", None)) is not None:
         # pre-compute cu_seqlens_argmin in dataset class for perf
-        cu_seqlens = cu_seqlens[: cu_seqlens_argmin.item()]
+        # Ensure scalar index even if CP/TP broadcasts produce multiple values
+        if torch.is_tensor(cu_seqlens_argmin) and cu_seqlens_argmin.numel() > 1:
+            cu_seqlens_argmin = cu_seqlens_argmin.min()
+        cu_seqlens = cu_seqlens[: int(cu_seqlens_argmin.item())]
     else:
         cu_seqlens = cu_seqlens[: torch.argmin(cu_seqlens)]
 
