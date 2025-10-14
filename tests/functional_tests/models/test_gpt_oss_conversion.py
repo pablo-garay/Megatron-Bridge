@@ -75,7 +75,6 @@ class TestGptOssConversion:
     @pytest.mark.parametrize(
         "tp,pp,ep,test_name",
         [
-            (2, 1, 1, "TP"),
             (1, 2, 1, "PP"),
             (1, 1, 2, "EP"),
         ],

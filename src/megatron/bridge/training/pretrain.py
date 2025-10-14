@@ -68,6 +68,16 @@ def pretrain(
     state.cfg = config
 
     if config.inprocess_restart and config.inprocess_restart.enabled:
+        if dist.is_initialized():
+            raise RuntimeError(
+                "In-process restart is incompatible with user-initialized process groups. "
+                "The in-process restart mechanism expects to manage the process group lifecycle "
+                "and will destroy it during fault recovery. Either:\n"
+                "1. Disable in-process restart and manage the process group yourself, or\n"
+                "2. Let the framework initialize the process group by not calling "
+                "torch.distributed.init_process_group() before training."
+            )
+
         # Apply in-process restart wrapper directly to _pretrain
         from megatron.bridge.training.inprocess_restart import maybe_wrap_for_inprocess_restart
 
@@ -96,6 +106,10 @@ def _pretrain(
         store: Optional distributed Store used by in-process restart for coordination
         inprocess_call_wrapper: Optional wrapper injected by nvrx to expose restart iteration
     """
+    # Determine whether the training loop will initialize the process group
+    # If the trainer creates the process group, the trainer should destroy it before returning control back to the user
+    should_destroy_process_group = not dist.is_initialized()
+
     # Handle in-process restart store prefix
     if inprocess_call_wrapper is not None:
         restart_attempt = inprocess_call_wrapper.iteration
@@ -173,3 +187,15 @@ def _pretrain(
         )
 
     _finish_train(state)
+    _maybe_destroy_process_group(should_destroy_process_group)
+
+
+def _maybe_destroy_process_group(should_destroy: bool) -> None:
+    """Destroy the process group if it was created by this training session.
+
+    Args:
+        should_destroy: Whether the process group should be destroyed
+    """
+    if should_destroy and dist.is_initialized():
+        dist.barrier()
+        dist.destroy_process_group()
