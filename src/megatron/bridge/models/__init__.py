@@ -48,6 +48,18 @@ from megatron.bridge.models.gemma import (
     GemmaModelProvider2B,
     GemmaModelProvider7B,
 )
+from megatron.bridge.models.glm import (
+    GLM45AirModelProvider106B,
+    GLM45Bridge,
+    GLM45ModelProvider355B,
+    GLMMoEModelProvider,
+)
+from megatron.bridge.models.gpt_oss import (
+    GPTOSSBridge,
+    GPTOSSProvider,
+    GPTOSSProvider20B,
+    GPTOSSProvider120B,
+)
 from megatron.bridge.models.gpt_provider import GPTModelProvider
 from megatron.bridge.models.llama import (
     CodeLlamaModelProvider7B,
@@ -88,6 +100,10 @@ from megatron.bridge.models.mamba.mamba_provider import (
     NVIDIAMambaHybridProvider8B,
     NVIDIAMambaModelProvider8B,
     NVIDIAMambaProvider8B,
+)
+from megatron.bridge.models.mistral import (
+    MistralModelProvider,
+    MistralSmall3ModelProvider24B,
 )
 from megatron.bridge.models.nemotron import (
     Nemotron3ModelProvider4B,
@@ -165,7 +181,15 @@ __all__ = [
     "Gemma2ModelProvider2B",
     "Gemma2ModelProvider9B",
     "Gemma2ModelProvider27B",
+    "GLMMoEModelProvider",
+    "GLM45ModelProvider355B",
+    "GLM45AirModelProvider106B",
+    "GLM45Bridge",
     "GPTModelProvider",
+    "GPTOSSBridge",
+    "GPTOSSProvider",
+    "GPTOSSProvider20B",
+    "GPTOSSProvider120B",
     "T5ModelProvider",
     "LlamaModelProvider",
     "Llama2ModelProvider7B",
@@ -187,6 +211,8 @@ __all__ = [
     "Llama4ModelProvider",
     "Llama4Experts16ModelProvider",
     "Llama4Experts128ModelProvider",
+    "MistralModelProvider",
+    "MistralSmall3ModelProvider24B",
     "Qwen2ModelProvider",
     "Qwen2ModelProvider500M",
     "Qwen2ModelProvider1P5B",

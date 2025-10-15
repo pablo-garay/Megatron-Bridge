@@ -210,8 +210,9 @@ class RerunStateMachineConfig:
 class DataloaderConfig:
     """Base configuration for data loading."""
 
-    dataloader_type: Optional[Literal["single", "cyclic", "external"]] = None
-    """Single pass vs multiple pass data loader"""
+    dataloader_type: Optional[Literal["single", "cyclic", "batch", "external"]] = None
+    """Dataloader type: 'single' for single pass, 'cyclic' for multiple passes with shuffling,
+    'batch' for global batch sampling (used in fine-tuning), or 'external' for custom dataloaders."""
 
     num_workers: int = 8
     """Dataloader number of workers."""
@@ -337,7 +338,14 @@ class MockGPTDatasetConfig(GPTDatasetConfig):
 
 @dataclass(kw_only=True)
 class FinetuningDatasetConfig(DataloaderConfig):
-    """Configuration specific to finetuning datasets, inheriting from DataloaderConfig."""
+    """Configuration specific to finetuning datasets, inheriting from DataloaderConfig.
+
+    Note: For fine-tuning, dataloader_type defaults to 'batch' which ensures sequences
+    within each global batch are padded to the same length.
+    """
+
+    dataloader_type: Optional[Literal["single", "cyclic", "batch", "external"]] = "batch"
+    """Dataloader type for fine-tuning. Defaults to 'batch' for optimal padding behavior."""
 
     dataset_root: Optional[Union[str, Path]] = None
     seq_length: int
@@ -526,6 +534,9 @@ class TrainingConfig:
     disable garbage collection at the start and the end of each evaluation run.
     """
 
+    iterations_to_skip: list[int] = field(default_factory=list)
+    """List of iterations to skip during training, empty by default."""
+
     # ---------------- Validation config. ----------------
 
     eval_iters: int = 100
@@ -668,6 +679,11 @@ class CheckpointConfig:
     """Determine handling of key mismatch during checkpoint load. Check StrictHandling docs for flags meaning.
     NOTE: This flag controls only distributed checkpoint load from storage, not loading state dict into the model."""
 
+    save_tokenizer_assets: bool = True
+    """Save tokenizer files to checkpoint directory. When enabled, saves all tokenizer artifacts
+    (vocab files, special tokens, tokenizer config) to make checkpoints self-contained and portable.
+    Set to False for performance-sensitive scenarios where tokenizer files are not needed."""
+
     replication: bool = False
     """If set, replication of local checkpoints is enabled. Needs to be enabled on all ranks."""
 
@@ -703,6 +719,12 @@ class LoggerConfig:
 
     log_throughput: bool = False
     """If set, calculate and log throughput per GPU."""
+
+    log_throughput_to_tensorboard: bool = False
+    """Enable throughput logging to tensorboard."""
+
+    throughput_window_size: int = 100
+    """Number of batches to use for a rolling average of throughput."""
 
     log_progress: bool = False
     """If set, log progress (in terms of number of processed tokens and number of floating-point operations)
@@ -747,6 +769,18 @@ class LoggerConfig:
 
     log_memory_to_tensorboard: bool = False
     """Enable memory logging to tensorboard."""
+
+    memory_keys: dict[str, str] | None = None
+    """Names of memory statistics to log from `torch.cuda.memory_stats()`"""
+
+    log_l2_norm_grad_to_tensorboard: bool = False
+    """Enable gradients logging to tensorboard."""
+
+    log_runtime_to_tensorboard: bool = False
+    """Enable runtime metrics logging to tensorboard."""
+
+    runtime_time_unit: str = "hours"
+    """ Time unit to use for time logging. """
 
     log_world_size_to_tensorboard: bool = False
     """Enable world size logging to tensorboard."""

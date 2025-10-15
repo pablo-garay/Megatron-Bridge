@@ -101,25 +101,20 @@ for name, weight in bridge.export_hf_weights(model, cpu=True):
     print(name, tuple(weight.shape))
 ```
 
-Training quickstart:
+Training quickstart using pre-configured recipes:
 ```python
-from megatron.bridge import AutoBridge
-
-import megatron.bridge.recipes.llama.llama32_1b as llama32_1b
+from megatron.bridge.recipes.llama import llama32_1b_pretrain_config
 from megatron.bridge.training.gpt_step import forward_step
 from megatron.bridge.training.pretrain import pretrain
 
 if __name__ == "__main__":
-    # Load Llama from Hugging Face Hub and convert to Megatron
-    bridge = AutoBridge.from_hf_pretrained("meta-llama/Llama-3.2-1B")
-    model_provider = bridge.to_megatron_provider()
+    # The recipe uses the Llama 3.2 1B model configuration from HuggingFace
+    cfg = llama32_1b_pretrain_config(seq_length=1024)
 
-    # Get defaults for other configuration from an existing Llama 3.2 recipe
-    cfg = llama32_1b.pretrain_config()
-    cfg.model = model_provider
+    # Override training parameters
     cfg.train.train_iters = 10
-
-    cfg.dataset.seq_length = cfg.model.seq_length
+    cfg.scheduler.lr_decay_iters = 10000
+    cfg.model.vocab_size = 8192
     cfg.tokenizer.vocab_size = cfg.model.vocab_size
 
     pretrain(cfg, forward_step)
@@ -159,7 +154,7 @@ Megatron Bridge provides out-of-the-box bridges and training recipes for a wide 
 
 ### Supported Models Overview
 
-| Model | Bridge Conversion | Pretrain Recipes | SFT & LoRA Recipes |
+| Model | Checkpoint Conversion | Pretrain Recipes | SFT & LoRA Recipes |
 |-------|-------------------|-------------------|-------------------|
 | [Llama 3](https://github.com/NVIDIA-NeMo/Megatron-Bridge/tree/main/src/megatron/bridge/models/llama) | ✅ | ✅ ([8b](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/src/megatron/bridge/recipes/llama/llama3_8b.py), [70b](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/src/megatron/bridge/recipes/llama/llama3_70b.py)) | Coming soon |
 | [Llama 3.1](https://github.com/NVIDIA-NeMo/Megatron-Bridge/tree/main/src/megatron/bridge/models/llama) | ✅ | ✅ ([8b](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/src/megatron/bridge/recipes/llama/llama31_8b.py), [70b](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/src/megatron/bridge/recipes/llama/llama31_70b.py), [405b](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/src/megatron/bridge/recipes/llama/llama31_405b.py)) | Coming soon |
@@ -174,6 +169,7 @@ Megatron Bridge provides out-of-the-box bridges and training recipes for a wide 
 | [DeepSeek V2](https://github.com/NVIDIA-NeMo/Megatron-Bridge/tree/main/src/megatron/bridge/models/deepseek) | ✅ | ✅ ([v2](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/src/megatron/bridge/recipes/deepseek/deepseek_v2.py)) | Coming soon |
 | [DeepSeek V3](https://github.com/NVIDIA-NeMo/Megatron-Bridge/tree/main/src/megatron/bridge/models/deepseek) | ✅ | ✅ ([v3](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/main/src/megatron/bridge/recipes/deepseek/deepseek_v3.py)) | Coming soon |
 | [Moonlight](https://github.com/NVIDIA-NeMo/Megatron-Bridge/tree/main/src/megatron/bridge/models/deepseek) | ✅ | Coming soon | Coming soon |
+| [GPT-oss](https://github.com/NVIDIA-NeMo/Megatron-Bridge/tree/main/src/megatron/bridge/models/gpt_oss) | ✅ | Coming soon | Coming soon |
 
 
 #### Launching Recipes
@@ -239,6 +235,7 @@ Megatron-Bridge/
 Megatron-Bridge is the continuation of [MBridge](https://github.com/ISEEKYAN/mbridge) by [Yan Bai](https://github.com/ISEEKYAN). We appreciate all the contribution and adoptions by the community partners:
 - [veRL](https://github.com/volcengine/verl) has adopted MBridge as a connector to Megatron-Core.
 - [slime](https://github.com/THUDM/slime) has adopted MBridge as Megatron-Core checkpoint converter.
+- [SkyRL](https://github.com/NovaSky-AI/SkyRL) has adopted MBridge as Megatron-Core connector and is migrating to Megatron-Bridge.
 - [Nemo-RL](https://github.com/NVIDIA/nemo-rl) has adopted Megatron-Bridge as Megatron-Core connector.
 - Community contributions: Special thanks to [Guanyou He](https://github.com/Thaurun) and [Junyu Wu](https://github.com/nrailg) from Weixin Group Infrastructure Center.
 
