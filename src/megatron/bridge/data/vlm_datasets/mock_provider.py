@@ -23,15 +23,14 @@ schema and optional `images` argument.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import numpy
 import torch
 from PIL import Image
 
+from megatron.bridge.data.vlm_datasets.conversation_dataset import VLMConversationDataset
 from megatron.bridge.training.config import DatasetBuildContext, DatasetProvider
-
-from .conversation_dataset import VLMConversationDataset
 
 
 class MockVLMConversationDataset(torch.utils.data.Dataset):
@@ -205,6 +204,9 @@ class MockVLMConversationProvider(DatasetProvider):
 
     # Number of images per sample
     num_images: int = 1
+
+    # Default dataloader type for VLM providers
+    dataloader_type: Optional[Literal["single", "cyclic", "external"]] = "single"
 
     # HF AutoProcessor instance will be set during build
     _processor: Optional[Any] = None

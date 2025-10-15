@@ -21,17 +21,22 @@ Public API re-exports:
 - Collate fns: model-specific batch builders
 """
 
-from .collate import COLLATE_FNS, default_collate_fn, phi4_mm_collate_fn, qwen2_5_collate_fn
-from .conversation_dataset import VLMConversationDataset
-from .hf_dataset_makers import (
+from megatron.bridge.data.vlm_datasets.collate import (
+    COLLATE_FNS,
+    default_collate_fn,
+    phi4_mm_collate_fn,
+    qwen2_5_collate_fn,
+)
+from megatron.bridge.data.vlm_datasets.conversation_dataset import VLMConversationDataset
+from megatron.bridge.data.vlm_datasets.hf_dataset_makers import (
     make_cord_v2_dataset,
     make_cv17_dataset,
     make_medpix_dataset,
     make_rdr_dataset,
 )
-from .hf_provider import HFDatasetConversationProvider
-from .mock_provider import MockVLMConversationProvider
-from .preloaded_provider import PreloadedVLMConversationProvider
+from megatron.bridge.data.vlm_datasets.hf_provider import HFDatasetConversationProvider
+from megatron.bridge.data.vlm_datasets.mock_provider import MockVLMConversationProvider
+from megatron.bridge.data.vlm_datasets.preloaded_provider import PreloadedVLMConversationProvider
 
 
 __all__ = [
