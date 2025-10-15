@@ -56,6 +56,7 @@ class GPTOssCommonKwargs(TypedDict, total=False):
     # Provide dataset directly
     dataset: Optional[Union[GPTDatasetConfig, FinetuningDatasetConfig, DatasetProvider]]
     # Model configuration
+    num_layers: int  # for ci testing
     tensor_model_parallel_size: int
     pipeline_model_parallel_size: int
     pipeline_parallelism_dtype: Optional[torch.dtype]
@@ -101,6 +102,7 @@ def _gpt_oss_common(
     # Dataset override option
     dataset: Optional[Union[GPTDatasetConfig, FinetuningDatasetConfig, DatasetProvider]] = None,
     # Model configuration
+    num_layers: int = None,  # for ci testing
     tensor_model_parallel_size: int = 1,
     pipeline_model_parallel_size: int = 1,
     pipeline_parallelism_dtype: Optional[torch.dtype] = None,
@@ -142,6 +144,8 @@ def _gpt_oss_common(
 
     bridge = AutoBridge.from_hf_pretrained(hf_path)
     model_cfg = bridge.to_megatron_provider(load_weights=False)
+    if num_layers is not None:
+        model_cfg.num_layers = num_layers
     model_cfg.tensor_model_parallel_size = tensor_model_parallel_size
     model_cfg.pipeline_model_parallel_size = pipeline_model_parallel_size
     model_cfg.pipeline_dtype = pipeline_parallelism_dtype
