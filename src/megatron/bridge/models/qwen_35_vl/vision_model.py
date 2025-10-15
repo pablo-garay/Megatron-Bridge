@@ -37,7 +37,7 @@ class Qwen3VLVisionModel(MegatronModule):
         if torch.cuda.is_available():
             self.vision_model = self.vision_model.to('cuda')
 
-    def forward(self, pixel_values: torch.Tensor, grid_thw: torch.Tensor, **kwargs) -> torch.Tensor:
+    def forward(self,  hidden_states: torch.Tensor, grid_thw: torch.Tensor, **kwargs) -> torch.Tensor:
         """
         Args:
             pixel_values (`torch.Tensor` of shape `(seq_len, hidden_size)`):
@@ -49,7 +49,7 @@ class Qwen3VLVisionModel(MegatronModule):
             
 
         """
-        image_embeds, deepstack_feature_lists = self.vision_model(pixel_values, grid_thw, **kwargs)
+        image_embeds, deepstack_feature_lists = self.vision_model(hidden_states, grid_thw, **kwargs)
         # split_sizes = (grid_thw.prod(-1) // self.vision_model.spatial_merge_size**2).tolist()
         # image_embeds = torch.split(image_embeds, split_sizes)
         # image_embeds = torch.cat(image_embeds, dim=0)
