@@ -1096,9 +1096,10 @@ class ConfigContainer(Container):
             "Cross Entropy Fusion is currently not deterministic."
         )
 
-        allowed_all_reduce = ("Tree", "Ring", "CollnetDirect", "CollnetChain", "^NVLS")
-        nccl_algo = os.getenv("NCCL_ALGO", None)
-        assert nccl_algo in allowed_all_reduce, f"NCCL_ALGO must be one of {allowed_all_reduce}."
+        all_reduce_choices = ("Tree", "Ring", "CollnetDirect", "CollnetChain", "^NVLS")
+        assert os.getenv("NCCL_ALGO", -1) != -1 and os.getenv("NCCL_ALGO") in all_reduce_choices, (
+            f"NCCL_ALGO must be one of {all_reduce_choices}."
+        )
 
         # Enable deterministic algorithms in torch
         torch.use_deterministic_algorithms(True)
