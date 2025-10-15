@@ -129,6 +129,10 @@ from megatron.bridge.models.nemotronh.nemotron_h_provider import (
     NemotronNanoModelProvider9Bv2,
     NemotronNanoModelProvider12Bv2,
 )
+from megatron.bridge.models.olmoe import (
+    OlMoEBridge,
+    OlMoEModelProvider,
+)
 from megatron.bridge.models.qwen import (
     Qwen2ModelProvider,
     Qwen2ModelProvider1P5B,
@@ -213,6 +217,8 @@ __all__ = [
     "Llama4Experts128ModelProvider",
     "MistralModelProvider",
     "MistralSmall3ModelProvider24B",
+    "OlMoEBridge",
+    "OlMoEModelProvider",
     "Qwen2ModelProvider",
     "Qwen2ModelProvider500M",
     "Qwen2ModelProvider1P5B",
