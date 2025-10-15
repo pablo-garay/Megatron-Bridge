@@ -62,7 +62,7 @@ class TestVisionModel:
         print(f"image_grid_thw shape is {image_grid_thw.shape}")
  
         with torch.no_grad():
-            hidden_states, deepstack_feature_lists  = model(pixel_values=pixel_values, grid_thw=image_grid_thw)
+            hidden_states, deepstack_feature_lists  = model(hidden_states=pixel_values, grid_thw=image_grid_thw)
         
         print(f"output hidden state shape is {hidden_states.shape}")
         print(f"output deepstack feature lists shape is {len(deepstack_feature_lists)} first element shape is {deepstack_feature_lists[0].shape}")
