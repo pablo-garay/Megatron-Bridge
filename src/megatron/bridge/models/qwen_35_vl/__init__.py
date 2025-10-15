@@ -15,9 +15,13 @@
 from megatron.bridge.models.qwen_35_vl.vision_model import Qwen3VLVisionModel  # noqa: F401
 from megatron.bridge.models.qwen_35_vl.gpt_model import Qwen3VLGPTModel  # noqa: F401
 from megatron.bridge.models.qwen_35_vl.transformer_block import Qwen3VLTransformerBlock  # noqa: F401
+from megatron.bridge.models.qwen_35_vl.transformer_config import Qwen3VLTransformerConfig  # noqa: F401
+from megatron.bridge.models.qwen_35_vl.model import Qwen35VLModel  # noqa: F401
 
 __all__ = [
     "Qwen3VLVisionModel",
     "Qwen3VLGPTModel",
     "Qwen3VLTransformerBlock",
+    "Qwen3VLTransformerConfig",
+    "Qwen35VLModel",
 ]

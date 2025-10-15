@@ -51,7 +51,6 @@ class TestQwen3VLTextRotaryEmbedding:
         torch.testing.assert_close(hf_sin, mbridge_sin)
 
 if __name__ == "__main__":
-    # Configure logging to show INFO level messages
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     test_rope = TestQwen3VLTextRotaryEmbedding()
     test_rope.test_qwen3_vl_text_rotary_embedding()
