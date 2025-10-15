@@ -17,12 +17,11 @@ from typing import Any, Optional
 
 from megatron.core.transformer import MegatronModule
 
-from megatron.bridge.utils.common_utils import print_rank_0
 from megatron.bridge.training.config import TensorInspectConfig
+from megatron.bridge.utils.common_utils import print_rank_0
 
-MISSING_NVINSPECT_MSG = (
-    "nvdlfw_inspect is not available. Please install it with `pip install nvdlfw-inspect`."
-)
+
+MISSING_NVINSPECT_MSG = "nvdlfw_inspect is not available. Please install it with `pip install nvdlfw-inspect`."
 
 try:
     import nvdlfw_inspect.api as nvinspect_api
@@ -31,6 +30,7 @@ try:
         MetricLogger,
         wrap_tensorboard_writer,
     )
+
     HAVE_NVINSPECT = True
 except (ImportError, ModuleNotFoundError):
     HAVE_NVINSPECT = False
@@ -88,7 +88,7 @@ def _maybe_attach_metric_loggers(tensorboard_logger: Optional[Any], wandb_logger
                     self._wandb.log({name: value}, step=iteration)
 
             MetricLogger.add_logger(_WandbModuleLogger(wandb_logger))
-    except Exception as e:  
+    except Exception as e:
         print_rank_0(f"Skipping NVIDIA DLFw Inspect metric logger attach due to error: {e}")
 
 
@@ -151,5 +151,3 @@ def tensor_inspect_end_if_enabled(tensor_inspect_config: TensorInspectConfig | N
         nvinspect_api.end_debug()
     except Exception as e:
         print_rank_0(f"NVIDIA DLFw Inspect end failed: {e}")
-
-

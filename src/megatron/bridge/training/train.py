@@ -57,6 +57,10 @@ from megatron.bridge.training.profiling import (
     should_profile_rank,
 )
 from megatron.bridge.training.state import GlobalState
+from megatron.bridge.training.tensor_inspect import (
+    tensor_inspect_end_if_enabled,
+    tensor_inspect_step_if_enabled,
+)
 from megatron.bridge.training.utils import flop_utils
 from megatron.bridge.training.utils.log_utils import append_to_progress_log, barrier_and_log
 from megatron.bridge.training.utils.train_utils import (
@@ -67,10 +71,6 @@ from megatron.bridge.training.utils.train_utils import (
     training_log,
 )
 from megatron.bridge.utils.common_utils import get_world_size_safe, print_rank_0
-from megatron.bridge.training.tensor_inspect import (
-    tensor_inspect_end_if_enabled,
-    tensor_inspect_step_if_enabled,
-)
 
 
 def train(

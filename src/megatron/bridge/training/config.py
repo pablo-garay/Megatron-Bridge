@@ -882,7 +882,6 @@ class TensorInspectConfig:
     init_training_step: int = 0
     """Initial training step for the inspector (used when resuming)."""
 
-
     def finalize(self) -> None:
         """Populate sensible defaults when inspection is enabled.
 
@@ -894,6 +893,7 @@ class TensorInspectConfig:
         if not self.feature_dirs:
             try:
                 import importlib
+
                 te_features_mod = importlib.import_module("transformer_engine.debug.features")
                 te_features_dir = Path(te_features_mod.__file__).parent
                 if te_features_dir.exists():
