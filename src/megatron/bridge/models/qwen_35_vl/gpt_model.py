@@ -20,7 +20,7 @@ from megatron.bridge.models.transformer_config import TransformerConfig
 from megatron.bridge.models.qwen_35_vl.transformer_block import Qwen3VLTransformerBlock
 from megatron.bridge.models.qwen_35_vl.rope import Qwen3VLTextRotaryEmbedding
 
-
+from transformers import Qwen3VLMoeTextConfig
 class Qwen3VLGPTModel(GPTModel):
 
     def __init__(
@@ -67,13 +67,7 @@ class Qwen3VLGPTModel(GPTModel):
         )
 
         # rebuild rope
-        self.rotary_pos_emb = Qwen3VLTextRotaryEmbedding(
-            kv_channels=self.config.kv_channels,
-            rotary_percent=rotary_percent,
-            rotary_interleaved=self.config.rotary_interleaved,
-            seq_len_interpolation_factor=seq_len_interpolation_factor,
-            rotary_base=rotary_base,
-        )
+        self.rotary_pos_emb = Qwen3VLTextRotaryEmbedding(Qwen3VLMoeTextConfig.from_pretrained("Qwen/Qwen3-VL-30B-A3B-Instruct") )
         self.mrope_section = self.config.mrope_section
         assert (
             self.mrope_section is not None

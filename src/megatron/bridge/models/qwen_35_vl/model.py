@@ -5,31 +5,23 @@ from megatron.core import InferenceParams, tensor_parallel, mpu
 from megatron.core.packed_seq_params import PackedSeqParams
 from megatron.core.transformer import MegatronModule
 from megatron.core.transformer.spec_utils import ModuleSpec
+from megatron.core.transformer.transformer_config import TransformerConfig
 
-from mbridge.models.qwen3_vl.attention import Qwen3VLSelfAttention
-from mbridge.models.qwen3_vl.transformer_config import Qwen3VLTransformerConfig
-from mbridge.models.qwen3_vl.vision_model import Qwen3VLVisionModel
-from mbridge.models.qwen3_vl.rope_utils import get_rope_index
-from mbridge.models.qwen3_vl.gpt_model import Qwen3VLGPTModel
-from mbridge.models.qwen3_vl.utils import split_deepstack_embs
+from megatron.bridge.models.qwen_35_vl.transformer_config import Qwen3VLTransformerConfig
+from megatron.bridge.models.qwen_35_vl.vision_model import Qwen3VLVisionModel
+from megatron.bridge.models.qwen_35_vl.utils import get_rope_index
+from megatron.bridge.models.qwen_35_vl.gpt_model import Qwen3VLGPTModel
+from megatron.bridge.models.qwen_35_vl.utils import split_deepstack_embs
 
 
 # Note: This is under development and may be missing features.
-class Qwen3VLModel(MegatronModule):
+class Qwen35VLModel(MegatronModule):
     """Qwen3VL multi-modal model.
 
     Args:
         language_transformer_config (TransformerConfig): Transformer config for the language model.
         language_transformer_layer_spec (ModuleSpec): Specifies module to use for transformer layers of the
-            language model.
-        language_vocab_size (int): Language model vocabulary size.
-        language_max_sequence_length (int): Language model maximum sequence length. This is used for
-            positional embedding.
         vision_transformer_config (TransformerConfig): Transformer config for the vision model.
-        vision_transformer_layer_spec (ModuleSpec): Specifies module to use for transformer layers of the
-            vision model and vision patch merger.
-        vision_patch_merger_spec (ModuleSpec): Specifies the module to use for the vision
-            projection.
         parallel_output (bool): Do not gather the outputs, keep them split across tensor parallel ranks. This
             is typically True for training and False for inference.
         language_rotary_percent (float): Percent of rotary dimension to use for rotary position embeddings
@@ -44,32 +36,18 @@ class Qwen3VLModel(MegatronModule):
         add_decoder (bool): Construct the decoder module (used with pipeline parallelism). Defaults to True.
             When we use pipelining, the decoder
             will live on only a subset of the pipeline stages (specifically, every stage after the first one).
-        img_h (int): The height of each image that the ViT will see.
-        img_w (int): The width of each image that the ViT will see.
-        patch_dim (int): The size of each patch side.
-        img_embedding_idx (int): Index in the language_embeddings tensor where image_embeddings should be
-            inserted. Defaults to 0.
     """
 
     def __init__(
         self,
         language_transformer_config: Qwen3VLTransformerConfig,
         language_transformer_layer_spec: ModuleSpec,
-        language_vocab_size: int,
-        language_max_sequence_length: int,
-        vision_transformer_config: Qwen3VLTransformerConfig,
+        vision_transformer_config: TransformerConfig,
         parallel_output: bool = True,
-        language_rotary_percent: float = 1.0,
         pre_process: bool = True,
         post_process: bool = True,
         add_encoder: bool = True,
         add_decoder: bool = True,
-        language_rotary_base: int = 10000,
-        fp16_lm_cross_entropy: bool = False,
-        language_share_embeddings_and_output_weights: bool = False,
-        image_token_id: int = 151655,
-        video_token_id: int = 151656,
-        vision_start_token_id: int = 151652,
     ) -> None:
         super().__init__(config=language_transformer_config)
 
@@ -92,9 +70,9 @@ class Qwen3VLModel(MegatronModule):
         self.encoder_hidden_state = None
         self.vision_model = None
         self.language_model = None
-        self.image_token_id = image_token_id
-        self.video_token_id = video_token_id
-        self.vision_start_token_id = vision_start_token_id
+        self.image_token_id = language_transformer_config.image_token_id
+        self.video_token_id = language_transformer_config.video_token_id
+        self.vision_start_token_id = language_transformer_config.vision_start_token_id
 
         # This attribute is needed to check if an all-reduce is required
         # on the word embeddings inside `finalize_model_grads._allreduce_word_embedding_grads`.
@@ -108,16 +86,16 @@ class Qwen3VLModel(MegatronModule):
         self.language_model = Qwen3VLGPTModel(
             config=language_transformer_config,
             transformer_layer_spec=language_transformer_layer_spec,
-            vocab_size=language_vocab_size,
-            max_sequence_length=language_max_sequence_length,
+            vocab_size=language_transformer_config.vocab_size,
+            max_sequence_length=language_transformer_config.language_max_sequence_length,
             parallel_output=parallel_output,
             position_embedding_type="mrope",
-            rotary_percent=language_rotary_percent,
+            rotary_percent=language_transformer_config.rotary_percent,
             pre_process=self.pre_process,
             post_process=self.post_process,
-            rotary_base=language_rotary_base,
-            fp16_lm_cross_entropy=fp16_lm_cross_entropy,
-            share_embeddings_and_output_weights=language_share_embeddings_and_output_weights,
+            rotary_base=language_transformer_config.rotary_base,
+            fp16_lm_cross_entropy=language_transformer_config.fp16_lm_cross_entropy,
+            share_embeddings_and_output_weights=language_transformer_config.share_embeddings_and_output_weights,
             scatter_embedding_sequence_parallel=False,
         )
         # assert len(vision_transformer_config.deepstack_visual_indexes) < len(self.language_model.decoder.layers), \
