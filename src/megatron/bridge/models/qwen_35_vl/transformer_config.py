@@ -32,6 +32,7 @@ class Qwen3VLTransformerConfig(TransformerConfig):
     
     # Multimodal rope section for [temporal, height, width] dimensions
     mrope_section: List[int] = field(default_factory=lambda: [24, 20, 20])
+    apply_rope_fusion: bool = False
 
     image_token_id: int = 151655
     video_token_id: int = 151656

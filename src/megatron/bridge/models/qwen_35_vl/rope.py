@@ -15,7 +15,8 @@ class Qwen3VLTextRotaryEmbedding(Qwen3VLMoeTextRotaryEmbedding):
                 height and width in rope calculation.
 
         Returns:
-            Tensor: Embeddings after applying RoPE.
+            Tensor: Raw frequency embeddings for Megatron Core (shape: [seq_length, bs, 1, dim]).
+                    Megatron Core will compute cos/sin internally and apply attention_scaling.
         """
         seq = position_ids.to(device=self.inv_freq.device, dtype=self.inv_freq.dtype)
 
@@ -29,8 +30,11 @@ class Qwen3VLTextRotaryEmbedding(Qwen3VLMoeTextRotaryEmbedding):
         # shape (3, bs, seq_length, dim)
         freqs = (inv_freq_expanded @ seq_expanded).transpose(2, 3)
         freqs = self.apply_interleaved_mrope(freqs, mrope_section)
-        emb = torch.cat((freqs, freqs), dim=-1)
-
-        # shape (seq_length, bs, 1, 2 * dim)
-        emb = emb[..., None, :].transpose(0, 1).contiguous()
+        
+        # DON'T double the freqs for Megatron Core - it computes cos/sin internally
+        # emb = torch.cat((freqs, freqs), dim=-1)  # This was causing dimension mismatch!
+        
+        # Apply attention scaling here since Megatron Core doesn't know about it
+        # shape (seq_length, bs, 1, dim)
+        emb = (freqs * self.attention_scaling)[..., None, :].transpose(0, 1).contiguous()
         return emb

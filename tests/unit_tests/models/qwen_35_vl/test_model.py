@@ -11,10 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
 import torch
 import torch.nn.functional as F
-from unittest.mock import patch, MagicMock
 
 from megatron.bridge.models.qwen_35_vl.model import Qwen35VLModel
 from megatron.bridge.models.qwen_35_vl.transformer_config import Qwen3VLTransformerConfig
@@ -236,13 +234,13 @@ class TestQwen3VLModel:
         model.to("cuda")
 
         inputs = self.get_data_batch()
+        print(f"[rank {torch.distributed.get_rank()}] [test_qwen35_vl_test_fwd_pass] input_ids {inputs['input_ids'].shape} pixel_values {inputs['pixel_values'].shape}")
         output = model(**inputs)
-        logging.info(f"[test_qwen35_vl_test_fwd_pass]output shape is {output.shape}")
+        print(f"[rank {torch.distributed.get_rank()}] [test_qwen35_vl_test_fwd_pass] output shape  {output.shape}")
 
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     test_qwen3_vl_model = TestQwen3VLModel()
     test_qwen3_vl_model.test_qwen35_vl_test_fwd_pass()
 
