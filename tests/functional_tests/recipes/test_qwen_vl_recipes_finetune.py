@@ -16,16 +16,14 @@
 
 import pytest
 
-from megatron.bridge.recipes.qwen_vl.qwen25_vl import (
-    qwen25_vl_3b_pretrain_config as qwen25_vl_3b_config,
-)
+from megatron.bridge.recipes.qwen_vl.qwen25_vl import qwen25_vl_3b_finetune_config
 from tests.functional_tests.recipes.utils import run_pretrain_vl_recipe_test
 
 
 QWEN_VL_PRETRAIN_RECIPES = [
     # (config_func, name, parallelism_overrides)
     # Two-GPU TP for local/CI multi-GPU runs
-    (qwen25_vl_3b_config, "qwen25_vl_3b", {"tensor_parallelism": 2, "pipeline_parallelism": 1}),
+    (qwen25_vl_3b_finetune_config, "qwen25_vl_3b", {"tensor_parallelism": 2, "pipeline_parallelism": 1}),
 ]
 
 

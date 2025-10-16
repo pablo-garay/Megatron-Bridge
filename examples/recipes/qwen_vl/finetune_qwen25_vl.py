@@ -14,26 +14,31 @@
 # limitations under the License.
 
 """
-Qwen2.5-VL Pretraining Script with YAML and CLI Configuration Overrides.
+Qwen2.5-VL Finetuning Script with YAML and CLI Configuration Overrides.
 
 This mirrors the Llama example flow and uses the Qwen-VL recipe helpers.
-You can pick a specific recipe via `--recipe`, e.g., `qwen25_vl_3b_pretrain_config`,
-`qwen25_vl_7b_pretrain_config`, etc.
+You can pick a specific recipe via `--recipe`, e.g., `qwen25_vl_3b_finetune_config`,
+`qwen25_vl_7b_finetune_config`, etc.
 
 Examples:
-    Basic usage with default configuration:
-        $ torchrun --nproc_per_node=8 pretrain_qwen25_vl.py
-        $ torchrun --nproc_per_node=8 examples/recipes/qwen_vl/pretrain_qwen25_vl.py
+    Loading pretrained weights (recommended for finetune):
+        1) Import HF checkpoint to Megatron format:
+           $ python examples/conversion/convert_checkpoints.py import \
+               --hf-model Qwen/Qwen2.5-VL-3B-Instruct \
+               --megatron-path /path/to/megatron_ckpt
 
+        2) Run finetune using the imported checkpoint:
+           $ torchrun --nproc_per_node=8 examples/recipes/qwen_vl/finetune_qwen25_vl.py \
+               --pretrained-checkpoint /path/to/megatron_ckpt
 
     Using a custom YAML config file:
-        $ torchrun --nproc_per_node=8 pretrain_qwen25_vl.py --config-file conf/qwen25_vl_pretrain_override_example.yaml
+        $ torchrun --nproc_per_node=8 finetune_qwen25_vl.py --config-file conf/qwen25_vl_pretrain_override_example.yaml
 
     CLI overrides:
-        $ torchrun --nproc_per_node=8 pretrain_qwen25_vl.py model.tensor_model_parallel_size=4 train.train_iters=100000
+        $ torchrun --nproc_per_node=8 finetune_qwen25_vl.py model.tensor_model_parallel_size=4 train.train_iters=100000
 
     Selecting a specific recipe:
-        $ torchrun --nproc_per_node=8 pretrain_qwen25_vl.py --recipe qwen25_vl_7b_pretrain_config
+        $ torchrun --nproc_per_node=8 finetune_qwen25_vl.py --recipe qwen25_vl_7b_finetune_config
 """
 
 import argparse
@@ -68,7 +73,7 @@ DEFAULT_CONFIG_FILE_PATH: Path = SCRIPT_DIR / "conf" / DEFAULT_CONFIG_FILENAME
 def parse_cli_args() -> Tuple[argparse.Namespace, list[str]]:
     """Parse known script args and return remaining as Hydra-style overrides."""
     parser = argparse.ArgumentParser(
-        description="Pretrain Qwen2.5-VL with YAML and CLI overrides",
+        description="Finetune Qwen2.5-VL with YAML and CLI overrides",
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
@@ -102,10 +107,19 @@ def parse_cli_args() -> Tuple[argparse.Namespace, list[str]]:
     parser.add_argument(
         "--recipe",
         type=str,
-        default="qwen25_vl_3b_pretrain_config",
+        default="qwen25_vl_3b_finetune_config",
         help=(
             "Name of the recipe function in megatron.bridge.recipes.qwen_vl.qwen25_vl to use, "
-            "e.g., qwen25_vl_3b_pretrain_config, qwen25_vl_7b_pretrain_config."
+            "e.g., qwen25_vl_3b_finetune_config, qwen25_vl_7b_finetune_config."
+        ),
+    )
+    parser.add_argument(
+        "--pretrained-checkpoint",
+        type=str,
+        default=None,
+        help=(
+            "Path to imported Megatron checkpoint directory to load before finetuning. "
+            "Generate it with scripts/import_hf_ckpt.py."
         ),
     )
     parser.add_argument(
@@ -124,12 +138,12 @@ def main() -> None:
     """
     args, cli_overrides = parse_cli_args()
 
-    logger.info("Megatron-Bridge Qwen2.5-VL Pretraining Script with YAML & CLI Overrides")
+    logger.info("Megatron-Bridge Qwen2.5-VL Finetuning Script with YAML & CLI Overrides")
     logger.info("-----------------------------------------------------------------------")
 
     # Resolve the recipe function from the provided name
-    recipe_name = getattr(args, "recipe", "qwen25_vl_3b_pretrain_config")
-    available_recipes = [name for name in dir(qwen_vl_recipes) if name.endswith("_pretrain_config")]
+    recipe_name = getattr(args, "recipe", "qwen25_vl_3b_finetune_config")
+    available_recipes = [name for name in dir(qwen_vl_recipes) if name.endswith("_finetune_config")]
     if not hasattr(qwen_vl_recipes, recipe_name):
         logger.error(
             "Unknown recipe '%s'. Available recipes: %s",
@@ -149,6 +163,7 @@ def main() -> None:
         valid_data_path=None,
         test_data_path=None,
         image_folder=args.image_folder,
+        pretrained_checkpoint=args.pretrained_checkpoint,
     )
     logger.info("Loaded base configuration")
 
