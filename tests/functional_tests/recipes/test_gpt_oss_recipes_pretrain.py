@@ -40,8 +40,6 @@ def gpt_oss_toy_pretrain_config(**user_kwargs: Unpack[GPTOssCommonKwargs]) -> Co
 
 GPT_OSS_PRETRAIN_RECIPES = [
     # (config_func, name, parallelism_overrides)
-    # (gpt_oss_20b_config, "gpt_oss_20b", {}),
-    # (gpt_oss_120b_config, "gpt_oss_120b", {}),
     (gpt_oss_toy_pretrain_config, "gpt_oss_toy", {}),
 ]
 
