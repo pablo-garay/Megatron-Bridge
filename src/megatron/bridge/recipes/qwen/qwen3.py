@@ -61,7 +61,6 @@ class Qwen3CommonKwargs(TypedDict, total=False):
     sequence_parallelism: bool
     use_megatron_fsdp: bool
     use_null_tokenizer: bool
-    enable_recompute: bool
     # Training hyperparameters
     train_iters: int
     global_batch_size: int
@@ -358,142 +357,6 @@ def _qwen3_common(
     return cfg_container
 
 
-def _qwen3_finetune_common(
-    hf_path: str,
-    dir: str | None = None,
-    name: str = "default",
-    # Core model configuration
-    tensor_parallelism: int = 1,
-    pipeline_parallelism: int = 1,
-    pipeline_parallelism_dtype: torch.dtype | None = None,
-    virtual_pipeline_parallelism: int | None = None,
-    context_parallelism: int = 1,
-    sequence_parallelism: bool = False,
-    use_megatron_fsdp: bool = False,
-    enable_recompute: bool = False,
-    # Finetuning-specific params
-    pretrained_checkpoint: str | None = None,
-    peft: str | PEFT | None = "lora",
-    packed_sequence: bool = False,
-    # Training params
-    train_iters: int = 1000,
-    global_batch_size: int = 128,
-    micro_batch_size: int = 1,
-    seq_length: int = 2048,
-    eval_interval: int = 30,
-    save_interval: int = 50,
-    # Optimizer
-    finetune_lr: float = 1e-4,
-    min_lr: float = 0.0,
-    lr_warmup_iters: int = 50,
-    lr_decay_iters: int | None = None,  # Let config handle this
-    # W&B logging
-    wandb_project: str | None = None,
-    wandb_entity: str | None = None,
-    wandb_exp_name: str | None = None,
-    # Precision
-    precision_config: MixedPrecisionConfig | str | None = "bf16_mixed",
-    comm_overlap_config: CommOverlapConfig | None = None,
-) -> ConfigContainer:
-    """Common finetuning configuration for all Qwen3 models."""
-
-    # Setup directories
-    base_output_dir = dir if dir is not None else os.path.join(os.getcwd(), "nemo_experiments")
-    run_output_dir = os.path.join(base_output_dir, name)
-    checkpoint_dir = os.path.join(run_output_dir, "checkpoints")
-    tensorboard_dir = os.path.join(run_output_dir, "tb_logs")
-
-    # Create model config
-    bridge = AutoBridge.from_hf_pretrained(hf_path)
-    model_cfg = bridge.to_megatron_provider(load_weights=False)
-    model_cfg.tensor_model_parallel_size = tensor_parallelism
-    model_cfg.pipeline_model_parallel_size = pipeline_parallelism
-    model_cfg.pipeline_dtype = pipeline_parallelism_dtype
-    model_cfg.virtual_pipeline_model_parallel_size = virtual_pipeline_parallelism
-    model_cfg.context_parallel_size = context_parallelism
-    model_cfg.sequence_parallel = sequence_parallelism
-    model_cfg.seq_length = seq_length
-
-    # Recompute for larger models
-    if enable_recompute:
-        model_cfg.recompute_granularity = "full"
-        model_cfg.recompute_method = "uniform"
-        model_cfg.recompute_num_layers = 1
-
-    # use lower LR for full finetuning, higher LR for PEFT
-    if peft is None or (isinstance(peft, str) and peft.lower() == "none"):
-        effective_finetune_lr = 5e-6
-    else:
-        # lora/dora or custom peft
-        effective_finetune_lr = 1e-4 if finetune_lr is None else finetune_lr
-
-    opt_cfg, scheduler_cfg = distributed_fused_adam_with_cosine_annealing(
-        lr_warmup_iters=lr_warmup_iters,
-        lr_decay_iters=lr_decay_iters,  # None is fine
-        max_lr=effective_finetune_lr,
-        min_lr=min_lr,
-        adam_beta2=0.98,
-    )
-
-    # PEFT config
-    peft_config = default_peft_config(peft)
-
-    # Logger
-    logger_cfg = LoggerConfig(
-        log_interval=1,
-        tensorboard_dir=tensorboard_dir,
-        log_timers_to_tensorboard=True,
-        wandb_project=wandb_project,
-        wandb_entity=wandb_entity,
-        wandb_exp_name=wandb_exp_name,
-    )
-
-    # Always use HF tokenizer for finetuning
-    tokenizer_cfg = TokenizerConfig(
-        tokenizer_type="HuggingFaceTokenizer",
-        tokenizer_model=hf_path,
-    )
-
-    return ConfigContainer(
-        model=model_cfg,
-        train=TrainingConfig(
-            train_iters=train_iters,
-            eval_interval=eval_interval,
-            eval_iters=32,
-            global_batch_size=global_batch_size,
-            micro_batch_size=micro_batch_size,
-        ),
-        optimizer=opt_cfg,
-        scheduler=scheduler_cfg,
-        ddp=DistributedDataParallelConfig(
-            check_for_nan_in_grad=True,
-            grad_reduce_in_fp32=True,
-            overlap_grad_reduce=True,
-            overlap_param_gather=True,  # Required for MBridge's DDP to work correctly
-            average_in_collective=True,
-            use_distributed_optimizer=True,
-            use_megatron_fsdp=use_megatron_fsdp,
-        ),
-        dataset=default_squad_config(seq_length, packed_sequence),
-        logger=logger_cfg,
-        tokenizer=tokenizer_cfg,
-        checkpoint=CheckpointConfig(
-            save_interval=save_interval,
-            save=checkpoint_dir,
-            pretrained_checkpoint=pretrained_checkpoint,
-            ckpt_format="torch_dist",
-            fully_parallel_save=True,
-        ),
-        rng=RNGConfig(seed=5678),
-        peft=peft_config,
-        comm_overlap=comm_overlap_config,
-        mixed_precision=precision_config,
-    )
-
-
-# Finetuning recipe functions
-
-
 def qwen3_600m_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> ConfigContainer:
     """Return a finetuning config for Qwen3 600M.
 
@@ -541,12 +404,18 @@ def qwen3_32b_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> Con
         "hf_path": "Qwen/Qwen3-32B",
         "tensor_parallelism": 8 if is_full_sft else 1,  # Match NeMo2: TP=8 for SFT, TP=1 for LoRA
         "pipeline_parallelism": 2 if is_full_sft else 1,  # PP=2 for SFT, PP=1 for LoRA
-        "enable_recompute": True,  # Always enable for 32B
         "peft": peft_value,
         "finetune_lr": 5e-6 if is_full_sft else 1e-4,  # Match NeMo2: lower LR for SFT
     }
     combined_kwargs: Qwen3FinetuneKwargs = {**recommended_kwargs, **user_kwargs}
-    return _qwen3_finetune_common(**combined_kwargs)
+    config = _qwen3_finetune_common(**combined_kwargs)
+
+    # Enable recompute for 32B model
+    config.model.recompute_granularity = "full"
+    config.model.recompute_method = "uniform"
+    config.model.recompute_num_layers = 1
+
+    return config
 
 
 def qwen3_4b_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> ConfigContainer:
@@ -613,3 +482,125 @@ def qwen3_14b_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> Con
     }
     combined_kwargs: Qwen3FinetuneKwargs = {**recommended_kwargs, **user_kwargs}
     return _qwen3_finetune_common(**combined_kwargs)
+
+
+def _qwen3_finetune_common(
+    hf_path: str,
+    dir: str | None = None,
+    name: str = "default",
+    # Core model configuration
+    tensor_parallelism: int = 1,
+    pipeline_parallelism: int = 1,
+    pipeline_parallelism_dtype: torch.dtype | None = None,
+    virtual_pipeline_parallelism: int | None = None,
+    context_parallelism: int = 1,
+    sequence_parallelism: bool = False,
+    use_megatron_fsdp: bool = False,
+    # Finetuning-specific params
+    pretrained_checkpoint: str | None = None,
+    peft: str | PEFT | None = "lora",
+    packed_sequence: bool = False,
+    # Training params
+    train_iters: int = 1000,
+    global_batch_size: int | None = None,  # Auto-select based on packed_sequence if None
+    micro_batch_size: int = 1,
+    seq_length: int = 2048,
+    eval_interval: int = 30,
+    save_interval: int = 50,
+    # Optimizer
+    finetune_lr: float = 1e-4,
+    min_lr: float = 0.0,
+    lr_warmup_iters: int = 50,
+    lr_decay_iters: int | None = None,  # Let config handle this
+    # W&B logging
+    wandb_project: str | None = None,
+    wandb_entity: str | None = None,
+    wandb_exp_name: str | None = None,
+    # Precision
+    precision_config: MixedPrecisionConfig | str | None = "bf16_mixed",
+    comm_overlap_config: CommOverlapConfig | None = None,
+) -> ConfigContainer:
+    """Common finetuning configuration for all Qwen3 models."""
+
+    # Setup directories
+    base_output_dir = dir if dir is not None else os.path.join(os.getcwd(), "nemo_experiments")
+    run_output_dir = os.path.join(base_output_dir, name)
+    checkpoint_dir = os.path.join(run_output_dir, "checkpoints")
+    tensorboard_dir = os.path.join(run_output_dir, "tb_logs")
+
+    # Auto-select global_batch_size based on packed_sequence
+    if global_batch_size is None:
+        global_batch_size = 8 if packed_sequence else 128
+
+    # Create model config
+    bridge = AutoBridge.from_hf_pretrained(hf_path)
+    model_cfg = bridge.to_megatron_provider(load_weights=False)
+    model_cfg.tensor_model_parallel_size = tensor_parallelism
+    model_cfg.pipeline_model_parallel_size = pipeline_parallelism
+    model_cfg.pipeline_dtype = pipeline_parallelism_dtype
+    model_cfg.virtual_pipeline_model_parallel_size = virtual_pipeline_parallelism
+    model_cfg.context_parallel_size = context_parallelism
+    model_cfg.sequence_parallel = sequence_parallelism
+    model_cfg.seq_length = seq_length
+
+    # use lower LR for full finetuning, higher LR for PEFT
+    if peft is None or (isinstance(peft, str) and peft.lower() == "none"):
+        effective_finetune_lr = 5e-6
+    else:
+        # lora/dora or custom peft
+        effective_finetune_lr = 1e-4 if finetune_lr is None else finetune_lr
+
+    opt_cfg, scheduler_cfg = distributed_fused_adam_with_cosine_annealing(
+        lr_warmup_iters=lr_warmup_iters,
+        lr_decay_iters=lr_decay_iters,  # None is fine
+        max_lr=effective_finetune_lr,
+        min_lr=min_lr,
+        adam_beta2=0.98,
+    )
+
+    # PEFT config
+    peft_config = default_peft_config(peft)
+
+    # Logger
+    logger_cfg = LoggerConfig(
+        log_interval=1,
+        tensorboard_dir=tensorboard_dir,
+        log_timers_to_tensorboard=True,
+        wandb_project=wandb_project,
+        wandb_entity=wandb_entity,
+        wandb_exp_name=wandb_exp_name,
+    )
+
+    # Always use HF tokenizer for finetuning
+    tokenizer_cfg = TokenizerConfig(
+        tokenizer_type="HuggingFaceTokenizer",
+        tokenizer_model=hf_path,
+    )
+
+    return ConfigContainer(
+        model=model_cfg,
+        train=TrainingConfig(
+            train_iters=train_iters,
+            eval_interval=eval_interval,
+            eval_iters=32,
+            global_batch_size=global_batch_size,
+            micro_batch_size=micro_batch_size,
+        ),
+        optimizer=opt_cfg,
+        scheduler=scheduler_cfg,
+        ddp=DistributedDataParallelConfig(check_for_nan_in_grad=True),
+        dataset=default_squad_config(seq_length, packed_sequence),
+        logger=logger_cfg,
+        tokenizer=tokenizer_cfg,
+        checkpoint=CheckpointConfig(
+            save_interval=save_interval,
+            save=checkpoint_dir,
+            pretrained_checkpoint=pretrained_checkpoint,
+            ckpt_format="torch_dist",
+            fully_parallel_save=True,
+        ),
+        rng=RNGConfig(seed=5678),
+        peft=peft_config,
+        comm_overlap=comm_overlap_config,
+        mixed_precision=precision_config,
+    )
