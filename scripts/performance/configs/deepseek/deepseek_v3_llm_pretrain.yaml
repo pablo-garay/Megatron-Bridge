@@ -19,7 +19,9 @@ ConfigContainer:
   model:
     cross_entropy_fusion_impl: "te"
     moe_router_fusion: true
-    recompute_granularity: "selective"
+    recompute_granularity: null
+    external_cuda_graph: true
+    cuda_graph_scope: "full"
 
   train:
     train_iters: 50

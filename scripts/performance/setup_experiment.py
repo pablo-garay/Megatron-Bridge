@@ -104,7 +104,7 @@ if __name__ == "__main__":
         ranks = list(range(num_nodes * args.gpus_per_node))
         plugins.append(NsysPlugin(profile_step_start=start_step,
             profile_step_end=end_step,
-            profile_ranks=ranks,
+            profile_ranks=[0, 1, 2, 3, 64, 65, 66, 67, 128, 129, 130, 131, 192, 193, 194, 195],
             nsys_gpu_metrics=args.profiling_gpu_metrics,
             nsys_trace=['cuda']))
 
