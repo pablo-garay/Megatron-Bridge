@@ -74,7 +74,8 @@ def default_squad_config(seq_length: int, packed_sequence: bool = False) -> HFDa
         dataset_kwargs = {}
         packed_sequence_specs = None
 
-    # Preserve default 'batch' behavior to keep sampler composition unchanged
+    # Use 'batch' sampler for variable-length finetuning
+    # Samples full global batch to ensure consistent padding across all microbatches
     dataloader_type = "batch"
 
     return HFDatasetConfig(

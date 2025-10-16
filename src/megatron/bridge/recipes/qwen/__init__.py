@@ -39,7 +39,6 @@ from .qwen3 import (
     qwen3_14b_pretrain_config,
     qwen3_32b_finetune_config,
     qwen3_32b_pretrain_config,
-    # Qwen3 finetuning models
     qwen3_600m_finetune_config,
     qwen3_600m_pretrain_config,
 )
@@ -71,7 +70,6 @@ __all__ = [
     "qwen3_8b_pretrain_config",
     "qwen3_14b_pretrain_config",
     "qwen3_32b_pretrain_config",
-    # Qwen3 finetuning models
     "qwen3_600m_finetune_config",
     "qwen3_1p7b_finetune_config",
     "qwen3_4b_finetune_config",
