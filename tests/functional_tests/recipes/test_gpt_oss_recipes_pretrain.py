@@ -17,14 +17,14 @@
 import pytest
 from typing_extensions import Unpack
 
-from megatron.bridge.recipes.gpt_oss.gpt_oss import GPTOssCommonKwargs, _gpt_oss_common
+from megatron.bridge.recipes.gpt_oss.gpt_oss import GPTOSSCommonKwargs, _gpt_oss_common
 from megatron.bridge.training.config import ConfigContainer
 from tests.functional_tests.recipes.utils import run_pretrain_config_override_test, run_pretrain_recipe_test
 
 
-def gpt_oss_toy_pretrain_config(**user_kwargs: Unpack[GPTOssCommonKwargs]) -> ConfigContainer:
+def gpt_oss_toy_pretrain_config(**user_kwargs: Unpack[GPTOSSCommonKwargs]) -> ConfigContainer:
     """Return a pre-training config for GPT-OSS toy variant."""
-    recommended: GPTOssCommonKwargs = {
+    recommended: GPTOSSCommonKwargs = {
         "hf_path": "openai/gpt-oss-20b",
         "tensor_model_parallel_size": 1,
         "pipeline_model_parallel_size": 1,
@@ -34,7 +34,7 @@ def gpt_oss_toy_pretrain_config(**user_kwargs: Unpack[GPTOssCommonKwargs]) -> Co
         "global_batch_size": 8,
         "num_layers": 2,
     }
-    kwargs: GPTOssCommonKwargs = {**recommended, **user_kwargs}
+    kwargs: GPTOSSCommonKwargs = {**recommended, **user_kwargs}
     return _gpt_oss_common(**kwargs)
 
 
@@ -44,7 +44,7 @@ GPT_OSS_PRETRAIN_RECIPES = [
 ]
 
 
-class TestGPTOssRecipes:
+class TestGPTOSSRecipes:
     """Test class for GPT-OSS recipe functional tests."""
 
     @pytest.mark.run_only_on("GPU")

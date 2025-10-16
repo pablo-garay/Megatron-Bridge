@@ -19,7 +19,7 @@ import torch
 from typing_extensions import TypedDict, Unpack
 
 from megatron.bridge import AutoBridge
-from megatron.bridge.recipes.utils.dataset_utils import get_blend_fields_from_data_paths, get_pretrain_dataset
+from megatron.bridge.recipes.utils.dataset_utils import get_blend_fields_from_data_paths
 from megatron.bridge.recipes.utils.optimizer_utils import distributed_fused_adam_with_cosine_annealing
 from megatron.bridge.recipes.utils.tokenizer_utils import DEFAULT_NULL_TOKENIZER_VOCAB_SIZE
 from megatron.bridge.training.comm_overlap import CommOverlapConfig
@@ -38,7 +38,7 @@ from megatron.bridge.training.config import (
 from megatron.bridge.training.mixed_precision import MixedPrecisionConfig
 
 
-class GPTOssCommonKwargs(TypedDict, total=False):
+class GPTOSSCommonKwargs(TypedDict, total=False):
     """Typed options accepted by GPT-OSS recipe helpers."""
 
     # Core identifiers
@@ -180,7 +180,20 @@ def _gpt_oss_common(
             per_split_data_args_path,
             mock,
         )
-        dataset_cfg = get_pretrain_dataset(seq_length, blend, blend_per_split, split)
+        dataset_cfg = GPTDatasetConfig(
+            random_seed=1234,
+            reset_attention_mask=False,
+            reset_position_ids=False,
+            eod_mask_loss=False,
+            sequence_length=seq_length,
+            num_dataset_builder_threads=1,
+            blend=blend,
+            blend_per_split=blend_per_split,
+            split=split,
+            data_sharding=True,
+            dataloader_type="single",
+            skip_getting_attention_mask_from_dataset=True,
+        )
     else:
         dataset_cfg = dataset
 
@@ -234,9 +247,9 @@ def _gpt_oss_common(
     return cfg
 
 
-def gpt_oss_20b_pretrain_config(**user_kwargs: Unpack[GPTOssCommonKwargs]) -> ConfigContainer:
+def gpt_oss_20b_pretrain_config(**user_kwargs: Unpack[GPTOSSCommonKwargs]) -> ConfigContainer:
     """Return a pre-training config for GPT-OSS 20B variant."""
-    recommended: GPTOssCommonKwargs = {
+    recommended: GPTOSSCommonKwargs = {
         "hf_path": "openai/gpt-oss-20b",
         "tensor_model_parallel_size": 1,
         "pipeline_model_parallel_size": 4,
@@ -244,13 +257,13 @@ def gpt_oss_20b_pretrain_config(**user_kwargs: Unpack[GPTOssCommonKwargs]) -> Co
         "sequence_parallelism": False,
         "use_null_tokenizer": True,
     }
-    kwargs: GPTOssCommonKwargs = {**recommended, **user_kwargs}
+    kwargs: GPTOSSCommonKwargs = {**recommended, **user_kwargs}
     return _gpt_oss_common(**kwargs)
 
 
-def gpt_oss_120b_pretrain_config(**user_kwargs: Unpack[GPTOssCommonKwargs]) -> ConfigContainer:
+def gpt_oss_120b_pretrain_config(**user_kwargs: Unpack[GPTOSSCommonKwargs]) -> ConfigContainer:
     """Return a pre-training config for GPT-OSS 120B variant."""
-    recommended: GPTOssCommonKwargs = {
+    recommended: GPTOSSCommonKwargs = {
         "hf_path": "openai/gpt-oss-120b",
         "tensor_model_parallel_size": 1,
         "pipeline_model_parallel_size": 4,
@@ -258,5 +271,5 @@ def gpt_oss_120b_pretrain_config(**user_kwargs: Unpack[GPTOssCommonKwargs]) -> C
         "sequence_parallelism": True,
         "use_null_tokenizer": True,
     }
-    kwargs: GPTOssCommonKwargs = {**recommended, **user_kwargs}
+    kwargs: GPTOSSCommonKwargs = {**recommended, **user_kwargs}
     return _gpt_oss_common(**kwargs)
