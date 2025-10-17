@@ -44,9 +44,19 @@ from megatron.bridge.models.gemma import (
     Gemma2ModelProvider2B,
     Gemma2ModelProvider9B,
     Gemma2ModelProvider27B,
+    Gemma3ModelProvider,
+    Gemma3ModelProvider1B,
+    Gemma3ModelProvider4B,
+    Gemma3ModelProvider12B,
+    Gemma3ModelProvider27B,
     GemmaModelProvider,
     GemmaModelProvider2B,
     GemmaModelProvider7B,
+)
+from megatron.bridge.models.gemma_vl import (
+    Gemma3VLBridge,
+    Gemma3VLModel,
+    Gemma3VLModelProvider,
 )
 from megatron.bridge.models.glm import (
     GLM45AirModelProvider106B,
@@ -129,6 +139,10 @@ from megatron.bridge.models.nemotronh.nemotron_h_provider import (
     NemotronNanoModelProvider9Bv2,
     NemotronNanoModelProvider12Bv2,
 )
+from megatron.bridge.models.olmoe import (
+    OlMoEBridge,
+    OlMoEModelProvider,
+)
 from megatron.bridge.models.qwen import (
     Qwen2ModelProvider,
     Qwen2ModelProvider1P5B,
@@ -172,6 +186,11 @@ __all__ = [
     "ReplicatedMapping",
     "RowParallelMapping",
     "AutoMapping",
+    "Gemma3ModelProvider",
+    "Gemma3ModelProvider1B",
+    "Gemma3ModelProvider4B",
+    "Gemma3ModelProvider12B",
+    "Gemma3ModelProvider27B",
     "CodeGemmaModelProvider2B",
     "CodeGemmaModelProvider7B",
     "GemmaModelProvider",
@@ -213,6 +232,8 @@ __all__ = [
     "Llama4Experts128ModelProvider",
     "MistralModelProvider",
     "MistralSmall3ModelProvider24B",
+    "OlMoEBridge",
+    "OlMoEModelProvider",
     "Qwen2ModelProvider",
     "Qwen2ModelProvider500M",
     "Qwen2ModelProvider1P5B",
@@ -286,4 +307,7 @@ __all__ = [
     "Qwen25VLModel",
     "Qwen25VLBridge",
     "Qwen25VLModelProvider",
+    "Gemma3VLBridge",
+    "Gemma3VLModel",
+    "Gemma3VLModelProvider",
 ]
