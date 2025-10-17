@@ -260,7 +260,7 @@ class TETransformerLayerAutocast(MegatronModule, BaseTransformerLayer):  # type:
         context = None
 
         # External CUDA graph requires returned values to be Tensors
-        if hasattr(self.config, "external_cuda_graph") and self.config.external_cuda_graph and self.training:
+        if self.config.cuda_graph_impl == "transformer_engine" and self.training:
             return hidden_states
         return hidden_states, context
 

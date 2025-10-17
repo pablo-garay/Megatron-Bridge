@@ -222,7 +222,7 @@ def train(
         print_rank_0(f">>> Weight hashes match after {global_state.train_state.step} iterations...")
 
     # Capture CUDA Graphs.
-    if model_config.external_cuda_graph:
+    if model_config.cuda_graph_impl == "transformer_engine":
         cuda_graph_helper = TECudaGraphHelper(
             model=model,
             config=model_config,
@@ -320,7 +320,7 @@ def train(
                     model_config.param_sync_func = param_sync_func
                     pre_hook_enabled = True
                     # Set the manual hooks when CUDA Graphs are used.
-                    if model_config.external_cuda_graph:
+                    if model_config.cuda_graph_impl == "transformer_engine":
                         cuda_graph_helper.cuda_graph_set_manual_hooks()
 
         global_state.train_state.step += 1
