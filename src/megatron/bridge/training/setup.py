@@ -116,7 +116,6 @@ def setup(
         set_level_for_all_loggers=cfg.logger.set_level_for_all_loggers,
     )
 
-    # torch.cuda.set_stream(torch.cuda.Stream())
     initialize_megatron(
         cfg=cfg,
         get_embedding_ranks=get_embedding_ranks,
