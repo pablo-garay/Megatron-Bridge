@@ -524,7 +524,7 @@ def train_step(
         )
 
         # Forward pass.
-        if cfg.model.enable_cuda_graph and cfg.model.cuda_graph_scope == "full_iteration":
+        if cfg.model.cuda_graph_impl == "local" and cfg.model.cuda_graph_scope == "full_iteration":
             forward_backward_func = FullCudaGraphWrapper(
                 get_forward_backward_func(), cuda_graph_warmup_steps=cfg.model.cuda_graph_warmup_steps
             )

@@ -83,20 +83,21 @@ def evaluate(
     eval_num_microbatches = eval_batch_size // (state.cfg.train.micro_batch_size * state.cfg.data_parallel_size)
 
     with torch.no_grad():
-        iteration = 0
         if verbose:
             print_rank_0(f"Evaluating on {state.cfg.train.eval_iters * eval_batch_size} samples")
-        while iteration < state.cfg.train.eval_iters:
-            iteration += 1
-            if verbose:
-                print_rank_0(f"Evaluating iter {iteration}/{state.cfg.train.eval_iters}")
 
-        if state.cfg.model.enable_cuda_graph and state.cfg.model.cuda_graph_scope == "full_iteration":
+        if state.cfg.model.cuda_graph_impl == "local" and state.cfg.model.cuda_graph_scope == "full_iteration":
             forward_backward_func = FullCudaGraphWrapper(
                 get_forward_backward_func(), cuda_graph_warmup_steps=state.cfg.model.cuda_graph_warmup_steps
             )
         else:
             forward_backward_func = get_forward_backward_func()
+
+        iteration = 0
+        while iteration < state.cfg.train.eval_iters:
+            iteration += 1
+            if verbose:
+                print_rank_0(f"Evaluating iter {iteration}/{state.cfg.train.eval_iters}")
 
             # Don't care about timing during evaluation
             config.timers = None
