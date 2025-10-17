@@ -360,14 +360,19 @@ def _qwen3_common(
 def qwen3_600m_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> ConfigContainer:
     """Return a finetuning config for Qwen3 600M.
 
-    Default configuration: 1 node, 8 GPUs (TP=1, PP=1)
+    Default configuration: 1 node, 8 GPUs
+    - LoRA/DoRA: TP=1, PP=1, LR=1e-4
+    - Full SFT: TP=1, PP=1, LR=5e-6
     """
+    peft_value = user_kwargs.get("peft", "lora")
+    is_full_sft = peft_value is None or (isinstance(peft_value, str) and peft_value.lower() == "none")
+
     recommended_kwargs: Qwen3FinetuneKwargs = {
         "hf_path": "Qwen/Qwen3-0.6B",
         "tensor_parallelism": 1,
         "pipeline_parallelism": 1,
-        "peft": "lora",
-        "finetune_lr": 1e-4,
+        "peft": peft_value,
+        "finetune_lr": 5e-6 if is_full_sft else 1e-4,
     }
     combined_kwargs: Qwen3FinetuneKwargs = {**recommended_kwargs, **user_kwargs}
     return _qwen3_finetune_common(**combined_kwargs)
@@ -376,46 +381,22 @@ def qwen3_600m_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> Co
 def qwen3_1p7b_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> ConfigContainer:
     """Return a finetuning config for Qwen3 1.7B.
 
-    Default configuration: 1 node, 8 GPUs (TP=1, PP=1)
+    Default configuration: 1 node, 8 GPUs
+    - LoRA/DoRA: TP=1, PP=1, LR=1e-4
+    - Full SFT: TP=1, PP=1, LR=5e-6
     """
-    recommended_kwargs: Qwen3FinetuneKwargs = {
-        "hf_path": "Qwen/Qwen3-1.7B",
-        "tensor_parallelism": 1,
-        "pipeline_parallelism": 1,
-        "peft": "lora",
-        "finetune_lr": 1e-4,
-    }
-    combined_kwargs: Qwen3FinetuneKwargs = {**recommended_kwargs, **user_kwargs}
-    return _qwen3_finetune_common(**combined_kwargs)
-
-
-def qwen3_32b_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> ConfigContainer:
-    """Return a finetuning config for Qwen3 32B.
-
-    Default configuration: 2 nodes, 16 GPUs total
-    - LoRA/DoRA: TP=1, PP=1, LR=1e-4 (with recompute)
-    - Full SFT: TP=8, PP=2, LR=5e-6 (with recompute)
-    """
-    # Check if user is doing full SFT or PEFT (matches NeMo2 behavior)
     peft_value = user_kwargs.get("peft", "lora")
     is_full_sft = peft_value is None or (isinstance(peft_value, str) and peft_value.lower() == "none")
 
     recommended_kwargs: Qwen3FinetuneKwargs = {
-        "hf_path": "Qwen/Qwen3-32B",
-        "tensor_parallelism": 8 if is_full_sft else 1,  # Match NeMo2: TP=8 for SFT, TP=1 for LoRA
-        "pipeline_parallelism": 2 if is_full_sft else 1,  # PP=2 for SFT, PP=1 for LoRA
+        "hf_path": "Qwen/Qwen3-1.7B",
+        "tensor_parallelism": 1,
+        "pipeline_parallelism": 1,
         "peft": peft_value,
-        "finetune_lr": 5e-6 if is_full_sft else 1e-4,  # Match NeMo2: lower LR for SFT
+        "finetune_lr": 5e-6 if is_full_sft else 1e-4,
     }
     combined_kwargs: Qwen3FinetuneKwargs = {**recommended_kwargs, **user_kwargs}
-    config = _qwen3_finetune_common(**combined_kwargs)
-
-    # Enable recompute for 32B model
-    config.model.recompute_granularity = "full"
-    config.model.recompute_method = "uniform"
-    config.model.recompute_num_layers = 1
-
-    return config
+    return _qwen3_finetune_common(**combined_kwargs)
 
 
 def qwen3_4b_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> ConfigContainer:
@@ -484,6 +465,35 @@ def qwen3_14b_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> Con
     return _qwen3_finetune_common(**combined_kwargs)
 
 
+def qwen3_32b_finetune_config(**user_kwargs: Unpack[Qwen3FinetuneKwargs]) -> ConfigContainer:
+    """Return a finetuning config for Qwen3 32B.
+
+    Default configuration: 2 nodes, 16 GPUs total
+    - LoRA/DoRA: TP=1, PP=1, LR=1e-4 (with recompute)
+    - Full SFT: TP=8, PP=2, LR=5e-6 (with recompute)
+    """
+    # Check if user is doing full SFT or PEFT (matches NeMo2 behavior)
+    peft_value = user_kwargs.get("peft", "lora")
+    is_full_sft = peft_value is None or (isinstance(peft_value, str) and peft_value.lower() == "none")
+
+    recommended_kwargs: Qwen3FinetuneKwargs = {
+        "hf_path": "Qwen/Qwen3-32B",
+        "tensor_parallelism": 8 if is_full_sft else 1,  # Match NeMo2: TP=8 for SFT, TP=1 for LoRA
+        "pipeline_parallelism": 2 if is_full_sft else 1,  # PP=2 for SFT, PP=1 for LoRA
+        "peft": peft_value,
+        "finetune_lr": 5e-6 if is_full_sft else 1e-4,  # Match NeMo2: lower LR for SFT
+    }
+    combined_kwargs: Qwen3FinetuneKwargs = {**recommended_kwargs, **user_kwargs}
+    config = _qwen3_finetune_common(**combined_kwargs)
+
+    # Enable recompute for 32B model
+    config.model.recompute_granularity = "full"
+    config.model.recompute_method = "uniform"
+    config.model.recompute_num_layers = 1
+
+    return config
+
+
 def _qwen3_finetune_common(
     hf_path: str,
     dir: str | None = None,
@@ -543,17 +553,10 @@ def _qwen3_finetune_common(
     model_cfg.sequence_parallel = sequence_parallelism
     model_cfg.seq_length = seq_length
 
-    # use lower LR for full finetuning, higher LR for PEFT
-    if peft is None or (isinstance(peft, str) and peft.lower() == "none"):
-        effective_finetune_lr = 5e-6
-    else:
-        # lora/dora or custom peft
-        effective_finetune_lr = 1e-4 if finetune_lr is None else finetune_lr
-
     opt_cfg, scheduler_cfg = distributed_fused_adam_with_cosine_annealing(
         lr_warmup_iters=lr_warmup_iters,
         lr_decay_iters=lr_decay_iters,  # None is fine
-        max_lr=effective_finetune_lr,
+        max_lr=finetune_lr,
         min_lr=min_lr,
         adam_beta2=0.98,
     )
