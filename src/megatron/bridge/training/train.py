@@ -525,10 +525,10 @@ def train_step(
 
         # Forward pass.
         if cfg.model.enable_cuda_graph and cfg.model.cuda_graph_scope == "full_iteration":
-            print_rank_0("Using full cuda graph")
-            forward_backward_func = FullCudaGraphWrapper(get_forward_backward_func())
+            forward_backward_func = FullCudaGraphWrapper(
+                get_forward_backward_func(), cuda_graph_warmup_steps=cfg.model.cuda_graph_warmup_steps
+            )
         else:
-            print_rank_0("Not Using full cuda graph")
             forward_backward_func = get_forward_backward_func()
 
         losses_reduced = forward_backward_func(
