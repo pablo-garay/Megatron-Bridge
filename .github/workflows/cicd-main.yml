@@ -80,7 +80,7 @@ jobs:
       )
       && !cancelled()
     needs: [pre-flight, cicd-wait-in-queue]
-    runs-on: self-hosted-nemo
+    runs-on: self-hosted-nemo-cuda-13
     name: Launch_Unit_Tests
     environment: nemo-ci
     steps:
@@ -113,7 +113,7 @@ jobs:
           - script: L2_Launch_recipes
             timeout: 60
     needs: [cicd-unit-tests]
-    runs-on: self-hosted-nemo
+    runs-on: self-hosted-nemo-cuda-13
     if: |
       (
         success() 
