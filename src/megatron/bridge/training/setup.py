@@ -169,7 +169,7 @@ def setup(
         peft_hook = _create_peft_pre_wrap_hook(cfg, state)
         cfg.model.register_pre_wrap_hook(peft_hook)
         print_rank_0("Registered PEFT pre-wrap hook")
-    
+
     model = cfg.model.provide_distributed_model(
         ddp_config=cfg.ddp,
         use_megatron_fsdp=cfg.dist.use_megatron_fsdp,
@@ -177,7 +177,6 @@ def setup(
         overlap_param_gather_with_optimizer_step=cfg.optimizer.overlap_param_gather_with_optimizer_step,
         data_parallel_random_init=cfg.rng.data_parallel_random_init,
     )
-
     cfg.model.timers = timers
     cfg.optimizer.timers = timers
     optimizer, scheduler = setup_optimizer(
