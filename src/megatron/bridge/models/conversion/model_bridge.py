@@ -126,11 +126,12 @@ def _megatron_local_name_to_global(
         _, layer_module = get_module_and_param_from_name(models=models, param_name=layer_prefix, vp_stage=vp_stage)
 
         local_layer_number = int(param_name.split("layers.")[1].split(".")[0])
-        global_layer_number = layer_module.layer_number - 1
-        param_name = param_name.replace(
-            f"layers.{local_layer_number}.",
-            f"layers.{global_layer_number}.",
-        )
+        if isinstance(layer_module, MegatronModule):
+            global_layer_number = layer_module.layer_number - 1
+            param_name = param_name.replace(
+                f"layers.{local_layer_number}.",
+                f"layers.{global_layer_number}.",
+            )
 
     # EP
     ep_group = parallel_state.get_expert_model_parallel_group()
@@ -790,7 +791,11 @@ class MegatronModelBridge(Generic[HFPreTrained, ModelProviderTarget, MegatronMod
         if hasattr(unwrapped_model, "language_model"):
             unwrapped_model = unwrapped_model.language_model
         model_config = unwrapped_model.config
-        if model_config.share_embeddings_and_output_weights and model_config.pipeline_model_parallel_size > 1:
+
+        # TODO(yuya): Fix for VPP, the vp stage needs to be passed in for stage checks
+        if (model_config.share_embeddings_and_output_weights and model_config.pipeline_model_parallel_size > 1) and (
+            parallel_state.is_pipeline_first_stage() or parallel_state.is_pipeline_last_stage()
+        ):
             # Broadcast embeddings and output weights from rank 0 to embedding group
             embd_group = parallel_state.get_embedding_group()
             embd_group_ranks = torch.distributed.get_process_group_ranks(embd_group)
@@ -876,6 +881,10 @@ class MegatronModelBridge(Generic[HFPreTrained, ModelProviderTarget, MegatronMod
                             continue
 
                 local_module, local_weights = get_module_and_param_from_name(megatron_model, local_name, vp_stage)
+                if local_module is not None and not hasattr(local_module, "config"):
+                    # If module is not a MegatronModule (e.g. torch.nn.Conv1d or a module list) we need
+                    # to get the config from the model
+                    setattr(local_module, "config", model_config)
 
                 tasks[global_name_idx] = WeightConversionTask(
                     pp_rank=pp_rank,
