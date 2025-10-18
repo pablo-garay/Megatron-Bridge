@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+'''
+uv run python -m torch.distributed.run --nproc_per_node=8 ./tests/unit_tests/models/qwen_35_vl/test_v
+ision_model.py
+'''
 import torch
 import torch.nn.functional as F
 
