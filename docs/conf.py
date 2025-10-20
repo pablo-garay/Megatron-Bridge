@@ -54,6 +54,7 @@ myst_enable_extensions = [
     "deflist",  # Supports definition lists with term: definition format
     "fieldlist",  # Enables field lists for metadata like :author: Name
     "tasklist",  # Adds support for GitHub-style task lists with [ ] and [x]
+    "attrs_block",  # Enables setting attributes on block elements using {#id .class key=val}
 ]
 myst_heading_anchors = 5  # Generates anchor links for headings up to level 5
 
