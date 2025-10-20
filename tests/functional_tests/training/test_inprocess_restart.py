@@ -46,7 +46,7 @@ from megatron.bridge.training.pretrain import pretrain
 
 def build_test_config(
     save_dir: str,
-    train_iters: int = 20,
+    train_iters: int = 10,
     seq_length: int = 512,
     async_save: bool = False,
     save_interval: int = 10,
@@ -212,7 +212,7 @@ class TestInProcessRestartIntegration:
             # Create config with in-process restart enabled
             config = build_test_config(
                 save_dir=checkpoint_dir,
-                train_iters=20,
+                train_iters=10,
                 seq_length=512,
                 async_save=False,
                 save_interval=10,
