@@ -24,7 +24,6 @@ from typing import (
     Dict,
     Iterable,
     List,
-    Optional,
     Pattern,
     Tuple,
     Union,
@@ -322,7 +321,7 @@ class StateDict(Mapping[str, torch.Tensor]):
         except Exception:
             return "<StateDict (not accessible)>"
 
-    def get(self, key: str, default=None) -> Optional[torch.Tensor]:
+    def get(self, key: str, default=None) -> torch.Tensor | None:
         """
         Gets a tensor from the state dict.
         Returns `default` if the key is not found.
@@ -419,7 +418,7 @@ class DictStateSource(StateSource):
 
     def __init__(self, state_dict: Dict[str, torch.Tensor]):
         self._dict = state_dict
-        self._keys_cache: Optional[List[str]] = None
+        self._keys_cache: List[str] | None = None
 
     def get_all_keys(self) -> List[str]:
         if self._keys_cache is None:
@@ -454,9 +453,9 @@ class SafeTensorsStateSource(StateSource):
 
     def __init__(self, path: Union[str, Path]):
         self.model_name_or_path = path
-        self._resolved_path_cache: Optional[Path] = None
-        self._keys_cache: Optional[List[str]] = None
-        self._key_to_filename_map_cache: Optional[Dict[str, str]] = None
+        self._resolved_path_cache: Path | None = None
+        self._keys_cache: List[str] | None = None
+        self._key_to_filename_map_cache: Dict[str, str] | None = None
 
     @property
     def path(self) -> Path:
@@ -809,12 +808,12 @@ class SafeTensorsStateSource(StateSource):
                 with open(output_index_file, "w") as f:
                     json.dump(new_index_data, f, indent=4)
 
-    def _get_key_to_filename_map(self) -> Optional[Dict[str, str]]:
+    def _get_key_to_filename_map(self) -> Dict[str, str] | None:
         return self._cached_get_key_to_filename_map(self.path)
 
     @staticmethod
     @lru_cache(maxsize=None)
-    def _cached_get_key_to_filename_map(model_name_or_path: Union[str, Path]) -> Optional[Dict[str, str]]:
+    def _cached_get_key_to_filename_map(model_name_or_path: Union[str, Path]) -> Dict[str, str] | None:
         """Static, cached method to get the key-to-filename map."""
         index_file = Path(model_name_or_path) / "model.safetensors.index.json"
         if index_file.exists():

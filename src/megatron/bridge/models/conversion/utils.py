@@ -16,7 +16,7 @@ import copy
 import functools
 import re
 import types
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Tuple
 
 import torch
 from megatron.core.transformer.module import MegatronModule
@@ -60,7 +60,7 @@ def weights_verification_table(bridge, megatron_model) -> Table:
 def get_module_and_param_from_name(
     models: MegatronModule | List[MegatronModule],
     param_name: str,
-    vp_stage: Optional[int] = None,
+    vp_stage: int | None = None,
 ) -> Tuple[torch.nn.Module, torch.Tensor] | Tuple[torch.nn.Module, torch.Tensor, Tuple]:
     """
     Get parameter from specific VP stage, ensuring that parameter

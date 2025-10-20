@@ -15,7 +15,7 @@
 import dataclasses
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Any, Generic, Iterable, List, Optional, Type, TypeVar, Union
+from typing import Any, Generic, Iterable, List, Type, TypeVar
 
 import torch.distributed as dist
 import transformers
@@ -303,7 +303,7 @@ class AutoBridge(Generic[MegatronModelT]):
         model: list[MegatronModelT],
         cpu: bool = False,
         show_progress: bool = True,
-        conversion_tasks: Optional[List[WeightConversionTask]] = None,
+        conversion_tasks: List[WeightConversionTask] | None = None,
     ) -> Iterable["HFWeightTuple"]:
         """
         Export Megatron model weights to HuggingFace format.
@@ -437,7 +437,7 @@ class AutoBridge(Generic[MegatronModelT]):
             dist.barrier()
 
     def save_megatron_model(
-        self, model: list[MegatronModule], path: str | Path, hf_tokenizer_path: Optional[str | Path] = None
+        self, model: list[MegatronModule], path: str | Path, hf_tokenizer_path: str | Path | None = None
     ) -> None:
         """
         Save a Megatron model in native Megatron checkpoint format without optimizer

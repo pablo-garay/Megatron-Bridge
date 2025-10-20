@@ -14,7 +14,7 @@
 import warnings
 from dataclasses import dataclass, field
 from functools import partial
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, List
 
 import torch
 import torch.nn.functional as F
@@ -62,8 +62,8 @@ class DeepSeekModelProvider(MLATransformerConfig, GPTModelProvider):
     seq_length: int = 4096
     rotary_base: float = 10000.0
     make_vocab_size_divisible_by: int = 3200
-    mtp_num_layers: Optional[int] = None
-    mtp_loss_scaling_factor: Optional[float] = None
+    mtp_num_layers: int | None = None
+    mtp_loss_scaling_factor: float | None = None
 
     # Regularization
     attention_dropout: float = 0.0
@@ -76,7 +76,7 @@ class DeepSeekModelProvider(MLATransformerConfig, GPTModelProvider):
     moe_token_dispatcher_type: str = "alltoall"
     moe_router_load_balancing_type: str = "seq_aux_loss"
     moe_shared_expert_overlap: bool = True
-    moe_router_dtype: Optional[str] = "fp32"
+    moe_router_dtype: str | None = "fp32"
 
     # MLA
     q_lora_rank: int = 1536
@@ -96,8 +96,8 @@ class DeepSeekModelProvider(MLATransformerConfig, GPTModelProvider):
     async_tensor_model_parallel_allreduce: bool = True
     attention_softmax_in_fp32: bool = False
     persist_layer_norm: bool = True
-    num_layers_in_first_pipeline_stage: Optional[int] = None
-    num_layers_in_last_pipeline_stage: Optional[int] = None
+    num_layers_in_first_pipeline_stage: int | None = None
+    num_layers_in_last_pipeline_stage: int | None = None
     account_for_embedding_in_pipeline_split: bool = False
     account_for_loss_in_pipeline_split: bool = False
 

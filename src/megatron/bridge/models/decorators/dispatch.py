@@ -19,7 +19,7 @@ behavior for different types using the `impl` decorator.
 """
 
 from functools import _find_impl  # type: ignore
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Dict, TypeVar
 
 
 _SignatureType = TypeVar("_SignatureType", bound=Callable)
@@ -169,7 +169,7 @@ class _Dispatch:
         lines.append(")")
         return "\n".join(lines)
 
-    def _dispatch(self, instance: Any, instance_type: type) -> Optional[Callable]:
+    def _dispatch(self, instance: Any, instance_type: type) -> Callable | None:
         """Find the implementation for a given type.
 
         Fallback order:

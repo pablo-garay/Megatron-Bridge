@@ -32,7 +32,7 @@ from transformers.configuration_utils import PretrainedConfig
 
 
 def safe_load_config_with_retry(
-    path: Union[str, Path], trust_remote_code: bool = False, max_retries: int = 3, base_delay: float = 1.0, **kwargs
+    path: str | Path, trust_remote_code: bool = False, max_retries: int = 3, base_delay: float = 1.0, **kwargs
 ) -> PretrainedConfig:
     """
     Thread-safe and process-safe configuration loading with retry logic.

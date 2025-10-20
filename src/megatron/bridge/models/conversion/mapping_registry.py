@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import re
-from typing import List, Optional
+from typing import List
 
 from megatron.bridge.models.conversion.param_mapping import MegatronParamMapping
 
@@ -133,7 +133,7 @@ class MegatronMappingRegistry:
                         reverse_dict_patterns[key] = None
                 self._reverse_patterns.append((reverse_dict_patterns, mapping))
 
-    def megatron_to_hf_lookup(self, megatron_param_name: str) -> Optional[MegatronParamMapping]:
+    def megatron_to_hf_lookup(self, megatron_param_name: str) -> MegatronParamMapping | None:
         """
         Get mapping for a Megatron parameter name.
 
@@ -169,7 +169,7 @@ class MegatronMappingRegistry:
                     return mapping.resolve(match.groups())
         return None
 
-    def hf_to_megatron_lookup(self, hf_param_name: str) -> Optional[MegatronParamMapping]:
+    def hf_to_megatron_lookup(self, hf_param_name: str) -> MegatronParamMapping | None:
         """
         Get mapping for a destination parameter name (reverse lookup).
 

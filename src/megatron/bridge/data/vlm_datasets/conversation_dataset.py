@@ -16,7 +16,7 @@
 Core dataset types for conversation-style VLM examples.
 """
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 import torch
 
@@ -40,7 +40,7 @@ class VLMConversationDataset(torch.utils.data.Dataset):
         base_examples: List[Dict[str, Any]],
         target_length: int,
         processor: Any,
-        collate_impl: Optional[Callable[[list, Any], Dict[str, torch.Tensor]]] = None,
+        collate_impl: Callable[[list, Any], Dict[str, torch.Tensor]] | None = None,
     ) -> None:
         assert isinstance(base_examples, list) and len(base_examples) > 0, "base_examples must be a non-empty list"
         self._base_examples = base_examples

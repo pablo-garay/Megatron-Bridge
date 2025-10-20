@@ -17,7 +17,7 @@ Provider that builds conversation datasets from HuggingFace datasets.
 """
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
+from typing import Any, Callable, Dict, List, Literal, Tuple
 
 import torch
 from transformers import AutoProcessor
@@ -53,16 +53,16 @@ class HFDatasetConversationProvider(DatasetProvider):
     maker_name: str
 
     # Optional parameters forwarded to the selected maker
-    maker_kwargs: Optional[Dict[str, Any]] = None
+    maker_kwargs: Dict[str, Any] | None = None
 
     # Optional collate override. If None, inferred from processor type.
-    collate_impl: Optional[Callable[[list, Any], Dict[str, torch.Tensor]]] = None
+    collate_impl: Callable[[list, Any], Dict[str, torch.Tensor]] | None = None
 
     # Keep parity with GPTDatasetConfig usage in batching utilities
     skip_getting_attention_mask_from_dataset: bool = True
 
     # DataloaderConfig fields are inherited (num_workers, dataloader_type, etc.)
-    dataloader_type: Optional[Literal["single", "cyclic", "external"]] = "single"
+    dataloader_type: Literal["single", "cyclic", "external"] | None = "single"
 
     def _get_maker(self) -> Callable[..., List[Dict[str, Any]]]:
         registry: Dict[str, Callable[..., List[Dict[str, Any]]]] = {
@@ -89,7 +89,7 @@ class HFDatasetConversationProvider(DatasetProvider):
         split: str,
         target_length: int,
         processor: Any,
-    ) -> Optional[VLMConversationDataset]:
+    ) -> VLMConversationDataset | None:
         if target_length <= 0:
             return None
         maker = self._get_maker()
@@ -105,7 +105,7 @@ class HFDatasetConversationProvider(DatasetProvider):
             collate_impl=self.collate_impl,
         )
 
-    def build_datasets(self, context: DatasetBuildContext) -> Tuple[Optional[Any], Optional[Any], Optional[Any]]:
+    def build_datasets(self, context: DatasetBuildContext) -> Tuple[Any | None, Any | None, Any | None]:
         # Bind processor for the requested model
         processor = AutoProcessor.from_pretrained(self.hf_processor_path, trust_remote_code=True)
 

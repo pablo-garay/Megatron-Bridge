@@ -14,7 +14,7 @@
 
 import logging
 import math
-from typing import Dict, Mapping, Optional, Tuple, Union
+from typing import Dict, Mapping, Tuple
 
 import torch
 import torch.nn as nn
@@ -216,7 +216,7 @@ class GPTOSSMLPDownProjMapping(AutoMapping):
     MLPDownProj for expert weights GPT-OSS models.
     """
 
-    def __init__(self, megatron_param: str, hf_param: str, permute_dims: Optional[Tuple[int, ...]] = None):
+    def __init__(self, megatron_param: str, hf_param: str, permute_dims: Tuple[int, ...] | None = None):
         super().__init__(megatron_param, hf_param, permute_dims)
         self.allow_hf_name_mismatch = True
 
@@ -244,7 +244,7 @@ class GPTOSSMLPGateUpProjMapping(AutoMapping):
     MLPGateUpProj for expert weights GPT-OSS models.
     """
 
-    def __init__(self, megatron_param: str, hf_param: str, permute_dims: Optional[Tuple[int, ...]] = None):
+    def __init__(self, megatron_param: str, hf_param: str, permute_dims: Tuple[int, ...] | None = None):
         super().__init__(megatron_param, hf_param, permute_dims)
         self.allow_hf_name_mismatch = True
 

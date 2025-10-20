@@ -15,7 +15,7 @@
 import logging
 from dataclasses import dataclass, field
 from functools import partial
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, List
 
 import torch
 import torch.nn.functional as F
@@ -54,7 +54,7 @@ class GLMMoEModelProvider(GPTModelProvider):
     init_method_std: int = 0.02
     hidden_dropout: float = 0.0
     vocab_size: int = 151552
-    share_embeddings_and_output_weights: Optional[bool] = False
+    share_embeddings_and_output_weights: bool | None = False
     layernorm_epsilon: float = 1e-5
     autocast_dtype: torch.dtype = torch.bfloat16
     params_dtype: torch.dtype = torch.bfloat16
@@ -91,8 +91,8 @@ class GLMMoEModelProvider(GPTModelProvider):
     bias_dropout_fusion: bool = True
 
     # MTP
-    mtp_num_layers: Optional[int] = 1
-    mtp_loss_scaling_factor: Optional[float] = (
+    mtp_num_layers: int | None = 1
+    mtp_loss_scaling_factor: float | None = (
         0.3  # https://arxiv.org/pdf/2508.06471 0.3 for the first 15T tokens, 0.1 for the remaining tokens.
     )
 

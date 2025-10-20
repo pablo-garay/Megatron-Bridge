@@ -21,7 +21,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Tuple
 
 from transformers import AutoProcessor
 
@@ -30,7 +30,7 @@ from megatron.bridge.training.config import DatasetBuildContext, DatasetProvider
 
 
 def _split_text_by_placeholders(
-    text: str, image_paths: List[str], video_paths: Optional[List[str]] = None
+    text: str, image_paths: List[str], video_paths: List[str] | None = None
 ) -> List[Dict[str, Any]]:
     """
     Split legacy text containing "<image>"/"<video>" markers into an alternating
@@ -71,7 +71,7 @@ def _split_text_by_placeholders(
     return parts
 
 
-def _normalize_paths(paths: Optional[List[Any]], base_folder: Optional[str]) -> Optional[List[Any]]:
+def _normalize_paths(paths: List[Any] | None, base_folder: str | None) -> List[Any] | None:
     if not paths or base_folder is None:
         return paths
     normalized: List[Any] = []
@@ -86,7 +86,7 @@ def _normalize_paths(paths: Optional[List[Any]], base_folder: Optional[str]) -> 
     return normalized
 
 
-def _record_to_conversation(record: Dict[str, Any], image_folder: Optional[str]) -> Optional[List[Dict[str, Any]]]:
+def _record_to_conversation(record: Dict[str, Any], image_folder: str | None) -> List[Dict[str, Any]] | None:
     """
     Transform a single legacy record into an AutoProcessor-friendly conversation schema.
     Supports two input styles:
@@ -185,25 +185,25 @@ class PreloadedVLMConversationProvider(DatasetProvider):
     hf_processor_path: str = "Qwen/Qwen2.5-VL-3B-Instruct"
 
     # Paths to preloaded datasets (JSON/JSONL). Any can be None.
-    train_data_path: Optional[str] = None
-    valid_data_path: Optional[str] = None
-    test_data_path: Optional[str] = None
+    train_data_path: str | None = None
+    valid_data_path: str | None = None
+    test_data_path: str | None = None
 
     # Optional image/video root to resolve relative paths
-    image_folder: Optional[str] = None
+    image_folder: str | None = None
 
     # Keep parity with GPTDatasetConfig usage in batching utilities
     skip_getting_attention_mask_from_dataset: bool = True
 
     # Default dataloader type for VLM providers
-    dataloader_type: Optional[Literal["single", "cyclic", "external"]] = "single"
+    dataloader_type: Literal["single", "cyclic", "external"] | None = "single"
 
     def _build_split_dataset(
         self,
-        split_path: Optional[str],
+        split_path: str | None,
         target_length: int,
         processor: Any,
-    ) -> Optional[VLMConversationDataset]:
+    ) -> VLMConversationDataset | None:
         if not split_path or target_length <= 0:
             return None
         raw_examples = _load_preloaded_examples(split_path)
@@ -222,7 +222,7 @@ class PreloadedVLMConversationProvider(DatasetProvider):
             processor=processor,
         )
 
-    def build_datasets(self, context: DatasetBuildContext) -> Tuple[Optional[Any], Optional[Any], Optional[Any]]:
+    def build_datasets(self, context: DatasetBuildContext) -> Tuple[Any | None, Any | None, Any | None]:
         processor = AutoProcessor.from_pretrained(self.hf_processor_path, trust_remote_code=True)
         train_ds = self._build_split_dataset(self.train_data_path, context.train_samples, processor)
         valid_ds = self._build_split_dataset(self.valid_data_path, context.valid_samples, processor)

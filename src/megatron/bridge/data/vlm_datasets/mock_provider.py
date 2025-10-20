@@ -23,7 +23,7 @@ schema and optional `images` argument.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Tuple
 
 import numpy
 from PIL import Image
@@ -61,10 +61,10 @@ class MockVLMConversationProvider(DatasetProvider):
     num_images: int = 1
 
     # Default dataloader type for VLM providers
-    dataloader_type: Optional[Literal["single", "cyclic", "external"]] = "single"
+    dataloader_type: Literal["single", "cyclic", "external"] | None = "single"
 
     # HF AutoProcessor instance will be set during build
-    _processor: Optional[Any] = None
+    _processor: Any | None = None
 
     def _make_base_examples(self) -> List[Dict[str, Any]]:
         # Single minimal conversation example; dataset will repeat to target length
@@ -96,7 +96,7 @@ class MockVLMConversationProvider(DatasetProvider):
 
         base_examples = self._make_base_examples()
 
-        def _maybe_make(size: int) -> Optional[VLMConversationDataset]:
+        def _maybe_make(size: int) -> VLMConversationDataset | None:
             if not size or size <= 0:
                 return None
             return VLMConversationDataset(

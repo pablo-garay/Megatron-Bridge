@@ -16,7 +16,7 @@ import copy
 import math
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Tuple
 
 import torch
 from megatron.core.activations import fast_gelu
@@ -250,16 +250,16 @@ class Gemma3SelfAttention(SelfAttention):
         self,
         hidden_states: Tensor,
         attention_mask: Tensor,
-        key_value_states: Optional[Tensor] = None,
-        inference_context: Optional[BaseInferenceContext] = None,
-        rotary_pos_emb: Optional[Union[Tensor, Tuple[Tensor, Tensor]]] = None,
-        rotary_pos_cos: Optional[Tensor] = None,
-        rotary_pos_sin: Optional[Tensor] = None,
-        attention_bias: Optional[Tensor] = None,
-        packed_seq_params: Optional[PackedSeqParams] = None,
-        sequence_len_offset: Optional[int] = None,
+        key_value_states: Tensor | None = None,
+        inference_context: BaseInferenceContext | None = None,
+        rotary_pos_emb: Tensor | Tuple[Tensor, Tensor] | None = None,
+        rotary_pos_cos: Tensor | None = None,
+        rotary_pos_sin: Tensor | None = None,
+        attention_bias: Tensor | None = None,
+        packed_seq_params: PackedSeqParams | None = None,
+        sequence_len_offset: int | None = None,
         *,
-        inference_params: Optional[BaseInferenceContext] = None,
+        inference_params: BaseInferenceContext | None = None,
     ) -> Tuple[Tensor, Tensor]:
         """Switch to either local or global rope embedding before forward"""
         assert isinstance(rotary_pos_emb, tuple)
@@ -297,7 +297,7 @@ class Gemma3TEDotProductAttention(TEDotProductAttention):
         layer_number: int,
         attn_mask_type: AttnMaskType,
         attention_type: str,
-        attention_dropout: Optional[float] = None,
+        attention_dropout: float | None = None,
         **kwargs,
     ):
         # Overwrite config.window_size based on layer_number
