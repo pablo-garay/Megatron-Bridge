@@ -555,7 +555,7 @@ def _qwen3_finetune_common(
 
     opt_cfg, scheduler_cfg = distributed_fused_adam_with_cosine_annealing(
         lr_warmup_iters=lr_warmup_iters,
-        lr_decay_iters=lr_decay_iters,  # None is fine
+        lr_decay_iters=lr_decay_iters,
         max_lr=finetune_lr,
         min_lr=min_lr,
         adam_beta2=0.98,
@@ -598,6 +598,7 @@ def _qwen3_finetune_common(
         checkpoint=CheckpointConfig(
             save_interval=save_interval,
             save=checkpoint_dir,
+            load=checkpoint_dir,
             pretrained_checkpoint=pretrained_checkpoint,
             ckpt_format="torch_dist",
             fully_parallel_save=True,
