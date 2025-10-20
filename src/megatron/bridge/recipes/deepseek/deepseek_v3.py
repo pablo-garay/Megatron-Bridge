@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from typing import List, Optional, Union
+from typing import list
 
 import torch
 from typing_extensions import TypedDict, Unpack
@@ -44,11 +44,11 @@ class DeepSeekV3CommonKwargs(TypedDict, total=False):
     dir: str | None
     name: str
     # Dataset configuration
-    data_paths: List[str] | None
+    data_paths: list[str] | None
     data_args_path: str | None
-    train_data_path: List[str] | None
-    valid_data_path: List[str] | None
-    test_data_path: List[str] | None
+    train_data_path: list[str] | None
+    valid_data_path: list[str] | None
+    test_data_path: list[str] | None
     per_split_data_args_path: str | None
     mock: bool
     # Model configuration
@@ -63,7 +63,7 @@ class DeepSeekV3CommonKwargs(TypedDict, total=False):
     check_for_nan_in_grad: bool
     # Recompute configuration
     recompute_granularity: str | None
-    recompute_modules: List[str] | None
+    recompute_modules: list[str] | None
     recompute_method: str | None
     recompute_num_layers: int | None
     # MTP support
@@ -86,7 +86,7 @@ class DeepSeekV3CommonKwargs(TypedDict, total=False):
     comm_overlap_config: CommOverlapConfig | None
     enable_deepep: bool
     apply_rope_fusion: bool
-    layout: str | List[List[str]] | None
+    layout: str | list[list[str]] | None
 
 
 def deepseek_v3_pretrain_config(**user_kwargs: Unpack[DeepSeekV3CommonKwargs]) -> ConfigContainer:
@@ -147,11 +147,11 @@ def _deepseek_v3_common(
     dir: str | None = None,
     name: str = "default",
     # Dataset configuration
-    data_paths: List[str] | None = None,
+    data_paths: list[str] | None = None,
     data_args_path: str | None = None,
-    train_data_path: List[str] | None = None,
-    valid_data_path: List[str] | None = None,
-    test_data_path: List[str] | None = None,
+    train_data_path: list[str] | None = None,
+    valid_data_path: list[str] | None = None,
+    test_data_path: list[str] | None = None,
     per_split_data_args_path: str | None = None,
     mock: bool = False,
     # Model configuration
@@ -166,7 +166,7 @@ def _deepseek_v3_common(
     check_for_nan_in_grad: bool = True,
     # Recompute configuration
     recompute_granularity: str | None = "selective",
-    recompute_modules: List[str] | None = None,
+    recompute_modules: list[str] | None = None,
     recompute_method: str | None = None,
     recompute_num_layers: int | None = None,
     # MTP support
@@ -189,7 +189,7 @@ def _deepseek_v3_common(
     comm_overlap_config: CommOverlapConfig | None = None,
     enable_deepep: bool = False,
     apply_rope_fusion: bool = False,
-    layout: str | List[List[str]] | None = None,
+    layout: str | list[list[str]] | None = None,
 ) -> ConfigContainer:
     """
     Create a pre-training configuration for DeepSeek-V3 models using a given HuggingFace path.

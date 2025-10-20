@@ -236,7 +236,7 @@ def create_test_config_container(
         `get_world_size_safe` function, and the config module reference.
     """
 
-    final_dataset_config: Union[GPTDatasetConfig, FinetuningDatasetConfig]
+    final_dataset_config: GPTDatasetConfig | FinetuningDatasetConfig
     if dataset_config_override:
         final_dataset_config = dataset_config_override
     elif isinstance(model_config, (GPTModelProvider, T5ModelProvider)):  # T5 also uses GPTDataset for these tests

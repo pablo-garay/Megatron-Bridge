@@ -15,7 +15,7 @@
 import abc
 import os
 from pathlib import Path
-from typing import Any, Callable, Generic, TypedDict, TypeVar, Union
+from typing import Any, Callable, Generic, TypedDict, TypeVar
 
 
 try:

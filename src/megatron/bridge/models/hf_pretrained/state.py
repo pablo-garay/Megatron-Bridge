@@ -21,12 +21,11 @@ from collections.abc import Mapping
 from functools import lru_cache
 from pathlib import Path
 from typing import (
-    Dict,
+    dict,
     Iterable,
-    List,
+    list,
     Pattern,
-    Tuple,
-    Union,
+    tuple,
     overload,
 )
 
@@ -97,7 +96,7 @@ class StateDict(Mapping[str, torch.Tensor]):
 
     source: "StateSource"
 
-    def __init__(self, source: Dict[str, torch.Tensor] | "StateSource"):
+    def __init__(self, source: dict[str, torch.Tensor] | "StateSource"):
         """
         Initializes the StateDict query accessor.
 
@@ -116,19 +115,19 @@ class StateDict(Mapping[str, torch.Tensor]):
 
         self.source = source
 
-    def _get_all_keys(self) -> List[str]:
+    def _get_all_keys(self) -> list[str]:
         """
         Get all available tensor keys from the underlying source.
         """
         return self.source.get_all_keys()
 
-    def _load_tensors(self, keys_to_load: List[str]) -> Dict[str, torch.Tensor]:
+    def _load_tensors(self, keys_to_load: list[str]) -> dict[str, torch.Tensor]:
         """
         Load specified tensors from the underlying source.
         """
         return self.source.load_tensors(keys_to_load)
 
-    def _match_keys(self, pattern: Union[str, Pattern]) -> List[str]:
+    def _match_keys(self, pattern: str | Pattern) -> list[str]:
         """Match keys against a glob pattern or regex."""
         all_keys = self._get_all_keys()
 
@@ -143,15 +142,15 @@ class StateDict(Mapping[str, torch.Tensor]):
             return [pattern] if pattern in all_keys else []
 
     @overload
-    def __getitem__(self, key: str) -> Union[torch.Tensor, Dict[str, torch.Tensor]]: ...
+    def __getitem__(self, key: str) -> torch.Tensor | dict[str, torch.Tensor]: ...
 
     @overload
-    def __getitem__(self, key: List[str]) -> Dict[str, torch.Tensor]: ...
+    def __getitem__(self, key: list[str]) -> dict[str, torch.Tensor]: ...
 
     @overload
-    def __getitem__(self, key: Pattern) -> Dict[str, torch.Tensor]: ...
+    def __getitem__(self, key: Pattern) -> dict[str, torch.Tensor]: ...
 
-    def __getitem__(self, key: Union[str, List[str], Pattern]) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
+    def __getitem__(self, key: str | list[str], Pattern) -> torch.Tensor | dict[str, torch.Tensor]:
         """
         Accesses state dict entries using various key types.
 
@@ -168,7 +167,7 @@ class StateDict(Mapping[str, torch.Tensor]):
         Returns:
             - A single `torch.Tensor` if `key` is a string that matches exactly one key
               and does not contain wildcards.
-            - A `Dict[str, torch.Tensor]` for all other cases (list of keys, glob
+            - A `dict[str, torch.Tensor]` for all other cases (list of keys, glob
               pattern, or regex), mapping the matched keys to their corresponding
               tensors.
 
@@ -230,7 +229,7 @@ class StateDict(Mapping[str, torch.Tensor]):
         else:
             raise TypeError(f"Key must be str, list of str, or compiled regex, got {type(key)}")
 
-    def regex(self, pattern: str) -> Dict[str, torch.Tensor]:
+    def regex(self, pattern: str) -> dict[str, torch.Tensor]:
         """
         Queries the state dict with a regular expression pattern.
 
@@ -257,7 +256,7 @@ class StateDict(Mapping[str, torch.Tensor]):
         """
         return self[re.compile(pattern)]
 
-    def glob(self, pattern: str) -> Dict[str, torch.Tensor]:
+    def glob(self, pattern: str) -> dict[str, torch.Tensor]:
         """
         Queries the state dict with a glob pattern.
 
@@ -284,7 +283,7 @@ class StateDict(Mapping[str, torch.Tensor]):
         """
         return self[pattern]
 
-    def __call__(self) -> Dict[str, torch.Tensor]:
+    def __call__(self) -> dict[str, torch.Tensor]:
         """
         Loads and returns the entire state dict as a dictionary.
 
@@ -301,11 +300,11 @@ class StateDict(Mapping[str, torch.Tensor]):
         all_keys = self._get_all_keys()
         return self._load_tensors(all_keys)
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         """Get all state dict keys."""
         return self._get_all_keys()
 
-    def items(self) -> List[tuple]:
+    def items(self) -> list[tuple]:
         """Get all state dict items."""
         return list(self().items())
 
@@ -366,12 +365,12 @@ class StateSource(ABC, Mapping[str, torch.Tensor]):
     """
 
     @abstractmethod
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         """Returns a list of all available tensor keys in the source."""
         pass
 
     @abstractmethod
-    def load_tensors(self, keys: List[str]) -> Dict[str, torch.Tensor]:
+    def load_tensors(self, keys: list[str]) -> dict[str, torch.Tensor]:
         """Loads the specified tensors from the source."""
         pass
 
@@ -416,16 +415,16 @@ class DictStateSource(StateSource):
         state_dict: A dictionary mapping tensor names (str) to `torch.Tensor` objects.
     """
 
-    def __init__(self, state_dict: Dict[str, torch.Tensor]):
+    def __init__(self, state_dict: dict[str, torch.Tensor]):
         self._dict = state_dict
-        self._keys_cache: List[str] | None = None
+        self._keys_cache: list[str] | None = None
 
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         if self._keys_cache is None:
             self._keys_cache = sorted(list(self._dict.keys()))
         return self._keys_cache
 
-    def load_tensors(self, keys: List[str]) -> Dict[str, torch.Tensor]:
+    def load_tensors(self, keys: list[str]) -> dict[str, torch.Tensor]:
         return {key: self._dict[key] for key in keys if key in self._dict}
 
 
@@ -451,11 +450,11 @@ class SafeTensorsStateSource(StateSource):
               and/or the index file. Can also be a Hugging Face Hub model ID.
     """
 
-    def __init__(self, path: Union[str, Path]):
+    def __init__(self, path: str | Path):
         self.model_name_or_path = path
         self._resolved_path_cache: Path | None = None
-        self._keys_cache: List[str] | None = None
-        self._key_to_filename_map_cache: Dict[str, str] | None = None
+        self._keys_cache: list[str] | None = None
+        self._key_to_filename_map_cache: dict[str, str] | None = None
 
     @property
     def path(self) -> Path:
@@ -470,7 +469,7 @@ class SafeTensorsStateSource(StateSource):
         return self._resolved_path_cache
 
     @property
-    def key_to_filename_map(self) -> Dict[str, str]:
+    def key_to_filename_map(self) -> dict[str, str]:
         """
         Provides a mapping from tensor keys to the safetensor filename they
         are stored in.
@@ -516,7 +515,7 @@ class SafeTensorsStateSource(StateSource):
         return key_map
 
     @staticmethod
-    def _resolve_path(model_name_or_path: Union[str, Path]) -> Path:
+    def _resolve_path(model_name_or_path: str | Path) -> Path:
         """
         Resolves a model name or path to a local directory.
         If the path is not a local directory, it is treated as a Hugging
@@ -549,7 +548,7 @@ class SafeTensorsStateSource(StateSource):
             # subsequent logic handle the file not found error.
             return local_path
 
-    def get_all_keys(self) -> List[str]:
+    def get_all_keys(self) -> list[str]:
         if self._keys_cache is not None:
             return self._keys_cache
 
@@ -573,7 +572,7 @@ class SafeTensorsStateSource(StateSource):
         self._keys_cache = sorted(list(all_keys))
         return self._keys_cache
 
-    def load_tensors(self, keys_to_load: List[str]) -> Dict[str, torch.Tensor]:
+    def load_tensors(self, keys_to_load: list[str]) -> dict[str, torch.Tensor]:
         if not keys_to_load:
             return {}
 
@@ -666,7 +665,7 @@ class SafeTensorsStateSource(StateSource):
         return False
 
     def save_generator(
-        self, generator: Iterable[Tuple[str, torch.Tensor]], output_path: Union[str, Path], strict: bool = True
+        self, generator: Iterable[tuple[str, torch.Tensor]], output_path: str | Path, strict: bool = True
     ):
         """
         Saves tensors from a generator to `.safetensors` files, preserving the
@@ -808,12 +807,12 @@ class SafeTensorsStateSource(StateSource):
                 with open(output_index_file, "w") as f:
                     json.dump(new_index_data, f, indent=4)
 
-    def _get_key_to_filename_map(self) -> Dict[str, str] | None:
+    def _get_key_to_filename_map(self) -> dict[str, str] | None:
         return self._cached_get_key_to_filename_map(self.path)
 
     @staticmethod
     @lru_cache(maxsize=None)
-    def _cached_get_key_to_filename_map(model_name_or_path: Union[str, Path]) -> Dict[str, str] | None:
+    def _cached_get_key_to_filename_map(model_name_or_path: str | Path) -> dict[str, str] | None:
         """Static, cached method to get the key-to-filename map."""
         index_file = Path(model_name_or_path) / "model.safetensors.index.json"
         if index_file.exists():

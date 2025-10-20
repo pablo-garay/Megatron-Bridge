@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import re
-from typing import List
+from typing import list
 
 from megatron.bridge.models.conversion.param_mapping import MegatronParamMapping
 
@@ -211,11 +211,11 @@ class MegatronMappingRegistry:
                             return mapping.resolve(match.groups())
         return None
 
-    def get_all_mappings(self) -> List[MegatronParamMapping]:
+    def get_all_mappings(self) -> list[MegatronParamMapping]:
         """Get all mappings in this MegatronMappingRegistry."""
         return self.mappings.copy()
 
-    def get_mappings_by_pattern(self, pattern: str) -> List[MegatronParamMapping]:
+    def get_mappings_by_pattern(self, pattern: str) -> list[MegatronParamMapping]:
         """
         Get all mappings that match a given pattern.
 

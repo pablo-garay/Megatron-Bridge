@@ -14,7 +14,7 @@
 
 import types
 from dataclasses import dataclass
-from typing import Tuple
+from typing import tuple
 
 import torch
 import torch.nn as nn
@@ -191,7 +191,7 @@ class Gemma3VLModel(MegatronModule):
     def _compute_attention_mask(
         self,
         input_ids: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         if not self.pre_process:
             return None
         batch_size, seq_len = input_ids.shape

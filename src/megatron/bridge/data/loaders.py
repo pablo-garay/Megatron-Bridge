@@ -340,9 +340,9 @@ def setup_data_iterators(
     model_length: int,
     train_valid_test_datasets_provider: Callable,
 ) -> tuple[
-    Union[RerunDataIterator | None, list[RerunDataIterator | None]],
-    Union[RerunDataIterator | None, list[RerunDataIterator | None]],
-    Union[RerunDataIterator | None, list[RerunDataIterator | None]],
+    RerunDataIterator | None | list[RerunDataIterator | None],
+    RerunDataIterator | None | list[RerunDataIterator | None],
+    RerunDataIterator | None | list[RerunDataIterator | None],
 ]:
     """Set up data iterators, handling virtual pipeline parallelism if enabled.
 

@@ -18,7 +18,11 @@ import math
 import os
 import re
 from pathlib import Path
+<<<<<<< HEAD
 from typing import Mapping
+=======
+from typing import list, Mapping
+>>>>>>> ed7d868 (get rid of List, Tuple, Dict, Union, Optional)
 
 import datasets
 import numpy as np
@@ -680,7 +684,7 @@ class GPTSFTDataset(Dataset):
         and prepares all necessary tensors for the model.
 
         Args:
-            batch (List[dict]): A list of dictionaries, where each dictionary is a
+            batch (list[dict]): A list of dictionaries, where each dictionary is a
                                 sample processed by `_process_example`.
 
         Returns:
@@ -849,7 +853,7 @@ class GPTSFTPackedDataset(GPTSFTDataset):
         efficient processing of packed sequences with kernels like THD attention.
 
         Args:
-            batch (List[dict]): A list of packed sequence samples.
+            batch (list[dict]): A list of packed sequence samples.
 
         Returns:
             dict: A dictionary of batched tensors, including 'tokens', 'labels',
@@ -1128,7 +1132,7 @@ class GPTSFTChatDataset(GPTSFTDataset):
         similar to the base class collate_fn but specific to chat data structure.
 
         Args:
-            batch (List[dict]): A list of dictionaries, where each dictionary is a
+            batch (list[dict]): A list of dictionaries, where each dictionary is a
                                 sample processed by `_process_example`.
 
         Returns:

@@ -24,7 +24,6 @@ import hashlib
 import os
 import time
 from pathlib import Path
-from typing import Union
 
 import filelock
 from transformers import AutoConfig

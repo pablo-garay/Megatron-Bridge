@@ -5,6 +5,10 @@
 import base64
 import json
 from pathlib import Path
+<<<<<<< HEAD
+=======
+from typing import dict, list
+>>>>>>> ed7d868 (get rid of List, Tuple, Dict, Union, Optional)
 
 from megatron.bridge.training.tokenizers.bert_tokenization import FullTokenizer as FullBertTokenizer
 from megatron.bridge.training.tokenizers.config import TokenizerConfig
@@ -833,7 +837,7 @@ def reload_mergeable_ranks(path: str, max_vocab: int | None = None) -> dict[byte
         max_vocab (int | None, optional): If provided, truncates the vocabulary
                                            to this maximum size. Defaults to None.
     Returns:
-        Dict[bytes, int]: A dictionary mapping token bytes to their ranks.
+        dict[bytes, int]: A dictionary mapping token bytes to their ranks.
     """
     assert path.endswith(".json")
 
@@ -873,7 +877,7 @@ class CustomTikTokenizer(MegatronTokenizer):
         pattern (str): The regex pattern string for Tiktoken.
         vocab_size (int | None): The target vocabulary size. If None, defaults to 2^17.
         num_special_tokens (int): The total number of special tokens to reserve.
-        special_tokens (List[str] | None): A list of initial special token strings.
+        special_tokens (list[str] | None): A list of initial special token strings.
                                             Must include "<unk>", "<s>", "</s>".
                                             If shorter than `num_special_tokens`,
                                             it will be padded with "<SPECIAL_id>".
@@ -978,7 +982,7 @@ class CustomTikTokenizer(MegatronTokenizer):
             bos (bool, optional): Whether to prepend the BOS token. Defaults to False.
             eos (bool, optional): Whether to append the EOS token. Defaults to False.
         Returns:
-            List[int]: A list of token IDs.
+            list[int]: A list of token IDs.
         """
         tokens = self._model.encode_ordinary(s)
         if bos:

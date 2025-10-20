@@ -15,7 +15,7 @@
 
 import sys
 from pathlib import Path
-from typing import Dict, Generic, List, TypeVar
+from typing import dict, Generic, list, TypeVar
 
 import torch
 from transformers import (
@@ -315,7 +315,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
             repetition_penalty (float, optional): Penalty for repeating tokens.
                 Values > 1.0 discourage repetition.
             pad_token_id (int, optional): ID of padding token.
-            eos_token_id (int or List[int], optional): ID(s) of end-of-sequence token(s).
+            eos_token_id (int or list[int], optional): ID(s) of end-of-sequence token(s).
             use_cache (bool, optional): Whether to use past key values to speed up
                 generation. Defaults to True.
 
@@ -364,7 +364,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
         """Forward call to model."""
         return self.model(*args, **kwargs)
 
-    def encode(self, text: str | List[str], **kwargs: Unpack["EncodeKwargs"]) -> Dict[str, torch.Tensor]:
+    def encode(self, text: str | list[str], **kwargs: Unpack["EncodeKwargs"]) -> dict[str, torch.Tensor]:
         """
         Encode text into token IDs using the model's tokenizer.
 
@@ -372,7 +372,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
         The output is automatically moved to the same device as the model.
 
         Args:
-            text (str or List[str]): Input text to encode. Can be a single string
+            text (str or list[str]): Input text to encode. Can be a single string
                 or a list of strings for batch encoding.
             **kwargs: Additional arguments passed to the tokenizer. Common options:
                 padding (bool or str, optional): Padding strategy.
@@ -394,7 +394,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
                     expects them.
 
         Returns:
-            Dict[str, torch.Tensor]: Dictionary containing:
+            dict[str, torch.Tensor]: Dictionary containing:
                 - input_ids: Token IDs tensor of shape (batch_size, sequence_length)
                 - attention_mask: Attention mask tensor of same shape (if applicable)
                 - token_type_ids: Token type IDs tensor (if applicable)
@@ -430,7 +430,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
 
     def decode(
         self,
-        token_ids: int | List[int] | torch.Tensor,
+        token_ids: int | list[int] | torch.Tensor,
         **kwargs: Unpack["DecodeKwargs"],
     ) -> str:
         """
@@ -440,7 +440,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
         back into human-readable text.
 
         Args:
-            token_ids (int, List[int], or torch.Tensor): Token IDs to decode.
+            token_ids (int, list[int], or torch.Tensor): Token IDs to decode.
                 Can be:
                 - Single token ID (int)
                 - List of token IDs
@@ -635,7 +635,7 @@ class GenerateKwargs(TypedDict, total=False):
     top_p: float | None
     repetition_penalty: float | None
     pad_token_id: int | None
-    eos_token_id: int | List[int] | None
+    eos_token_id: int | list[int] | None
     bos_token_id: int | None
     num_beams: int | None
     num_return_sequences: int | None

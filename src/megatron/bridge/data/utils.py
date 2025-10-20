@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from dataclasses import fields
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, dict, Type
 
 from megatron.core import mpu
 from megatron.core.datasets.blended_megatron_dataset_builder import BlendedMegatronDatasetBuilder
@@ -155,7 +155,7 @@ def finetuning_train_valid_test_datasets_provider(
     return train_ds, valid_ds, test_ds
 
 
-_REGISTRY: Dict[Type[Union[FinetuningDatasetConfig, BlendedMegatronDatasetConfig, HFDatasetConfig]], Callable] = {
+_REGISTRY: dict[Type[FinetuningDatasetConfig | BlendedMegatronDatasetConfig | HFDatasetConfig], Callable] = {
     GPTDatasetConfig: pretrain_train_valid_test_datasets_provider,
     MockGPTDatasetConfig: pretrain_train_valid_test_datasets_provider,
     HFDatasetConfig: hf_train_valid_test_datasets_provider,
@@ -164,7 +164,7 @@ _REGISTRY: Dict[Type[Union[FinetuningDatasetConfig, BlendedMegatronDatasetConfig
 
 
 def get_dataset_provider(
-    dataset_config: Union[FinetuningDatasetConfig, BlendedMegatronDatasetConfig, HFDatasetConfig, DatasetProvider],
+    dataset_config: FinetuningDatasetConfig | BlendedMegatronDatasetConfig | HFDatasetConfig | DatasetProvider,
 ) -> Callable:
     """Get the appropriate dataset provider function based on the config type.
 

@@ -14,7 +14,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Callable, List, Literal, Tuple
+from typing import Callable, list, Literal, tuple
 
 import torch
 from megatron.core.models.gpt import GPTModel as MCoreGPTModel
@@ -74,13 +74,13 @@ class GPTOSSProvider(GPTModelProvider):
     moe_ffn_hidden_size: int = 2880
     moe_router_load_balancing_type: str = "none"
     seq_length: int = 131072
-    window_size: Tuple[int, int] | None = (128, 0)
+    window_size: tuple[int, int] | None = (128, 0)
     softmax_type: Literal["vanilla", "off-by-one", "learnable"] = "learnable"
     activation_func: Callable = quick_gelu
     glu_linear_offset: float = 1.0
     bias_activation_fusion: bool = True
     bias_dropout_fusion: bool = False
-    window_attn_skip_freq: int | List[int] | None = 2  # alternative SWA/full
+    window_attn_skip_freq: int | list[int] | None = 2  # alternative SWA/full
     activation_func_clamp_value: float | None = 7.0
 
     def provide(self, pre_process=None, post_process=None, vp_stage=None) -> MCoreGPTModel:

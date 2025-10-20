@@ -209,7 +209,7 @@ def build_and_load_model(
     return_state_dict: bool = False,
     use_cpu_init: bool = False,
     skip_temp_dist_context: bool | None = None,
-) -> Union[Any, dict[str, torch.Tensor]]:
+) -> Any | dict[str, torch.Tensor]:
     """Load a Megatron model from a distributed checkpoint.
 
     Creates model instances and optionally a minimal distributed environment
@@ -320,7 +320,7 @@ def load_megatron_model(
     use_cpu_init: bool = False,
     skip_temp_dist_context: bool | None = None,
     mp_overrides: ModelParallelKwargs | None = None,
-) -> Union[Any, dict[str, torch.Tensor]]:
+) -> Any | dict[str, torch.Tensor]:
     """Load a Megatron model from a distributed checkpoint.
 
     Wrapper around load_model_config() and build_and_load_model() for convenience.
@@ -368,7 +368,7 @@ def load_megatron_model(
 
 def save_megatron_model(
     model: list[MegatronModule],
-    path: Union[str, Path],
+    path: str | Path,
     ckpt_format: str = "torch_dist",
     hf_tokenizer_path: str | Path | None = None,
 ) -> None:

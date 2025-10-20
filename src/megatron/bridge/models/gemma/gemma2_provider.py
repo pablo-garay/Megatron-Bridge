@@ -357,7 +357,7 @@ class Gemma2ModelProvider(GPTModelProvider):
     vocab_size: int = 256000
     gradient_accumulation_fusion: bool = False
 
-    transformer_layer_spec: Union[ModuleSpec, Callable[["GPTModelProvider"], ModuleSpec]] = gemma2_layer_spec
+    transformer_layer_spec: ModuleSpec | Callable[["GPTModelProvider"], ModuleSpec] = gemma2_layer_spec
 
     query_pre_attn_scalar: int = 224
     attn_logit_softcapping: float = 50.0

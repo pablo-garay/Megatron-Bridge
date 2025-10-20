@@ -37,7 +37,7 @@ class FinetuningDatasetBuilder:
     fine-tuning scenarios.
 
     Args:
-        dataset_root (Union[str, Path]): The root directory containing training, validation, and test data.
+        dataset_root (str | Path): The root directory containing training, validation, and test data.
         tokenizer: The tokenizer to use for preprocessing text.
         is_built_on_rank (Callable): Function that returns True if the dataset should be built on current rank.
         seq_length (int, optional): The maximum sequence length. Defaults to 2048.

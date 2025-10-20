@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple
+from typing import Any, dict, tuple
 
 import numpy
 import torch
@@ -69,7 +69,7 @@ class MockQwen25VLDataset(torch.utils.data.Dataset):
         array = self._rng.integers(low=0, high=256, size=(h, w, 3), dtype=numpy.uint8)
         return Image.fromarray(array, mode="RGB")
 
-    def _build_inputs(self) -> Tuple[torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
+    def _build_inputs(self) -> tuple[torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
         # Build chat template with one image and a simple text prompt
         num_images = max(0, int(getattr(self.config, "num_images", 1)))
         content = [{"type": "image"} for _ in range(num_images)]
@@ -89,7 +89,7 @@ class MockQwen25VLDataset(torch.utils.data.Dataset):
         if num_images > 0:
             images = [self._generate_random_image() for _ in range(num_images)]
 
-        processor_kwargs: Dict[str, Any] = {
+        processor_kwargs: dict[str, Any] = {
             "text": [text],
             "padding": "max_length" if self.config.pad_to_max_length else True,
             "return_tensors": "pt",
@@ -127,7 +127,7 @@ class MockQwen25VLDataset(torch.utils.data.Dataset):
                 image_grid_thw_t = image_grid_thw_t.squeeze(0)
         return input_ids, pixel_values_t, image_grid_thw_t
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:  # noqa: ARG002 - idx unused randomness ok
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:  # noqa: ARG002 - idx unused randomness ok
         input_ids, pixel_values, image_grid_thw = self._build_inputs()
 
         # Ensure at least length 2 to form tokens/labels by shifting
@@ -161,7 +161,7 @@ class MockQwen25VLDataset(torch.utils.data.Dataset):
         tokens[tokens == pad_token_id] = 0
         labels[labels == pad_token_id] = 0
 
-        sample: Dict[str, torch.Tensor] = {
+        sample: dict[str, torch.Tensor] = {
             "tokens": tokens,
             "labels": labels,
             "attention_mask": attention_mask,
@@ -193,7 +193,7 @@ class MockQwen25VLDatasetProvider(DatasetProvider):
     # Sample generation options
     prompt: str = "Describe this image."
     random_seed: int = 0
-    image_size: Tuple[int, int] = (256, 256)
+    image_size: tuple[int, int] = (256, 256)
     pad_to_max_length: bool = True
     create_attention_mask: bool = True
 
@@ -213,7 +213,7 @@ class MockQwen25VLDatasetProvider(DatasetProvider):
             context: Provides sample counts and optional tokenizer.
 
         Returns:
-            Tuple[Dataset | None, Dataset | None, Dataset | None]
+            tuple[Dataset | None, Dataset | None, Dataset | None]
         """
 
         from transformers import AutoProcessor

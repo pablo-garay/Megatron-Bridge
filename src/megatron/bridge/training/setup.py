@@ -263,7 +263,7 @@ def _update_model_config_funcs(
     model: MegatronModule,
     model_config: GPTModelProvider | T5ModelProvider,
     ddp_config: DistributedDataParallelConfig,
-    optimizer: Optional[MegatronOptimizer],
+    optimizer: MegatronOptimizer | None,
     *,
     align_grad_reduce: bool = True,
 ) -> None:
@@ -382,7 +382,7 @@ def _apply_peft_transformation(peft, base_model: list[MegatronModule]) -> list[M
     return transformed_model
 
 
-def _validate_and_set_vocab_size(model_vocab_size: Optional[int], tokenizer_vocab_size: int) -> tuple[int, bool]:
+def _validate_and_set_vocab_size(model_vocab_size: int | None, tokenizer_vocab_size: int) -> tuple[int, bool]:
     """Validate and determine the correct vocab size for the model.
 
     Args:

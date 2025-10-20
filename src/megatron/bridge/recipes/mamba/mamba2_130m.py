@@ -112,7 +112,7 @@ def pretrain_config(
         tensor_parallelism (int): Degree of tensor model parallelism.
         pipeline_parallelism (int): Degree of pipeline model parallelism.
         pipeline_parallelism_dtype (torch.dtype | None): Data type for pipeline parallelism.
-        virtual_pipeline_parallelism (Optional[int]): Size of virtual pipeline parallelism.
+        virtual_pipeline_parallelism (int | None): Size of virtual pipeline parallelism.
         context_parallelism (int): Degree of context parallelism to be passed to model_config.
         sequence_parallelism (bool): Whether to use sequence parallelism.
         train_iters (int): Total number of training iterations.
@@ -122,7 +122,7 @@ def pretrain_config(
         lr (float): Learning rate.
         min_lr (float): Minimum learning rate for cosine decay.
         lr_warmup_iters (int): Number of warmup iterations for the learning rate.
-        lr_decay_iters (Optional[int]): Number of iterations for learning rate decay.
+        lr_decay_iters (int | None): Number of iterations for learning rate decay.
         precision_config (MixedPrecisionConfig | str | None): Precision configuration for the model.
         comm_overlap_config (CommOverlapConfig | None): Communication overlap configuration for the model.
 

@@ -15,7 +15,7 @@
 import logging
 from dataclasses import dataclass, field
 from functools import partial
-from typing import TYPE_CHECKING, Callable, List
+from typing import TYPE_CHECKING, Callable, list
 
 import torch
 import torch.nn.functional as F
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 class GLMMoEModelProvider(GPTModelProvider):
     """Base provider for GLM MoE Models."""
 
-    transformer_layer_spec: Union["ModuleSpec", Callable[["GPTModelProvider"], "ModuleSpec"]] = partial(
+    transformer_layer_spec: "ModuleSpec" | Callable[["GPTModelProvider"], "ModuleSpec"] = partial(
         get_gpt_decoder_block_spec, use_transformer_engine=HAVE_TE
     )
 
@@ -107,7 +107,7 @@ class GLM45ModelProvider355B(GLMMoEModelProvider):
     num_moe_experts: int = 160
     hidden_size: int = 5120
     ffn_hidden_size: int = 12288
-    moe_layer_freq: Union[int, List[int]] = field(
+    moe_layer_freq: int | list[int] = field(
         default_factory=lambda: [0] * 3 + [1] * 89
     )  # first three layers are dense
     moe_ffn_hidden_size: int = 1536
@@ -126,7 +126,7 @@ class GLM45AirModelProvider106B(GLMMoEModelProvider):
     num_moe_experts: int = 128
     hidden_size: int = 4096
     ffn_hidden_size: int = 10944
-    moe_layer_freq: Union[int, List[int]] = field(
+    moe_layer_freq: int | list[int] = field(
         default_factory=lambda: [0] * 1 + [1] * 45
     )  # first one layer is dense
     moe_ffn_hidden_size: int = 1408

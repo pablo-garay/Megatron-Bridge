@@ -120,7 +120,7 @@ def prepare_packed_sequence_data(
         try:
             with output_metadata_path.open(mode="r") as f:
                 packing_metadata_file = json.load(f)
-                # 'packing_metadata_file' is expected to be a list of dicts: List[Dict[str, int]]
+                # 'packing_metadata_file' is expected to be a list of dicts: list[dict[str, int]]
                 # Each dict corresponds to a packed dataset. Typically there will be two dicts,
                 # one each for the packed val and train datasets.
                 # Each dict records two values: 'max_samples_per_bin', the max

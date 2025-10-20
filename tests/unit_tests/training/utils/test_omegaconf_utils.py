@@ -17,7 +17,7 @@
 
 import dataclasses
 import functools
-from typing import Any, Dict
+from typing import Any, dict
 
 import pytest
 import torch
@@ -333,7 +333,7 @@ class TestTrackExcludedFields:
         class ConfigWithDict:
             """Config with dictionary fields for testing."""
 
-            funcs: Dict[str, Any] = dataclasses.field(
+            funcs: dict[str, Any] = dataclasses.field(
                 default_factory=lambda: {"relu": torch.nn.functional.relu, "value": 42}
             )
 

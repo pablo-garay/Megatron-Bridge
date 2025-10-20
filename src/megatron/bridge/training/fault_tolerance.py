@@ -52,7 +52,7 @@ import signal
 import sys
 import threading
 import time
-from typing import List
+from typing import list
 
 import torch
 
@@ -325,7 +325,7 @@ def _load_state_if_exists(global_state: GlobalState) -> None:
         print_rank_0(f"FT: loaded timeouts from {ft_state.ft_state_path}. {rmon_cli.section_timeouts}")
 
 
-def _update_timeouts(selected_sections: List[str], calc_out_of_section: bool, global_state: GlobalState) -> None:
+def _update_timeouts(selected_sections: list[str], calc_out_of_section: bool, global_state: GlobalState) -> None:
     """Update fault tolerance timeouts based on observed intervals."""
     print_rank_0(
         f"FT: updating timeouts for: {selected_sections} " + f"update out-of-section: {calc_out_of_section} ..."

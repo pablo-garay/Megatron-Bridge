@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from typing import List
+from typing import list
 
 import torch
 from typing_extensions import TypedDict, Unpack
@@ -48,11 +48,11 @@ class Llama3CommonKwargs(TypedDict, total=False):
     dir: str | None
     name: str
     # Dataset configuration
-    data_paths: List[str] | None
+    data_paths: list[str] | None
     data_args_path: str | None
-    train_data_path: List[str] | None
-    valid_data_path: List[str] | None
-    test_data_path: List[str] | None
+    train_data_path: list[str] | None
+    valid_data_path: list[str] | None
+    test_data_path: list[str] | None
     per_split_data_args_path: str | None
     mock: bool
     # Model configuration
@@ -337,11 +337,11 @@ def _llama3_common(
     dir: str | None = None,
     name: str = "default",
     # Dataset configuration
-    data_paths: List[str] | None = None,
+    data_paths: list[str] | None = None,
     data_args_path: str | None = None,
-    train_data_path: List[str] | None = None,
-    valid_data_path: List[str] | None = None,
-    test_data_path: List[str] | None = None,
+    train_data_path: list[str] | None = None,
+    valid_data_path: list[str] | None = None,
+    test_data_path: list[str] | None = None,
     per_split_data_args_path: str | None = None,
     mock: bool = False,
     # Model configuration
@@ -377,11 +377,11 @@ def _llama3_common(
         hf_path (str): HuggingFace model path (e.g., "meta-llama/Meta-Llama-3-8B").
         dir (str | None): Base directory for saving logs and checkpoints.
         name (str): Name of the pre-training run.
-        data_paths (List[str] | None): List of paths to dataset files. If None, mock data will be used.
+        data_paths (list[str] | None): List of paths to dataset files. If None, mock data will be used.
         data_args_path (str | None): Path to file containing data arguments.
-        train_data_path (List[str] | None): List of training data paths.
-        valid_data_path (List[str] | None): List of validation data paths.
-        test_data_path (List[str] | None): List of test data paths.
+        train_data_path (list[str] | None): List of training data paths.
+        valid_data_path (list[str] | None): List of validation data paths.
+        test_data_path (list[str] | None): List of test data paths.
         per_split_data_args_path (str | None): Path to JSON file with per-split data configuration.
         mock (bool): Whether to use mock data. If True, ignores data_paths.
         tensor_parallelism (int): Degree of tensor model parallelism.

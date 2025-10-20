@@ -50,7 +50,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Tuple
+from typing import tuple
 
 import nemo_run as run
 
@@ -68,7 +68,7 @@ DEFAULT_CONFIG_FILENAME: str = "llama3_8b_pretrain_override_example.yaml"
 DEFAULT_CONFIG_FILE_PATH: Path = SCRIPT_DIR / "conf" / DEFAULT_CONFIG_FILENAME
 
 
-def parse_cli_args() -> Tuple[argparse.Namespace, list[str]]:
+def parse_cli_args() -> tuple[argparse.Namespace, list[str]]:
     """Parse command line arguments, separating launcher args from target script args."""
     parser = argparse.ArgumentParser(
         description="Launcher for Llama3 8B pretraining using nemo_run and TorchRun. "

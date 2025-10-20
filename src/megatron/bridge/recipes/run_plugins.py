@@ -29,7 +29,7 @@ Example usage with custom converter:
     )
 
     # Define a custom converter for argparse-style arguments
-    def argparse_preemption_converter(args: PreemptionPluginScriptArgs) -> List[str]:
+    def argparse_preemption_converter(args: PreemptionPluginScriptArgs) -> list[str]:
         result = []
         if args.enable_exit_handler:
             result.append("--enable-exit-handler")
@@ -50,7 +50,11 @@ If no converter is provided, the plugin will use the default hydra-style convert
 import logging
 import os
 from dataclasses import dataclass
+<<<<<<< HEAD
 from typing import TYPE_CHECKING, Callable
+=======
+from typing import TYPE_CHECKING, Callable, list
+>>>>>>> ed7d868 (get rid of List, Tuple, Dict, Union, Optional)
 
 from megatron.bridge.utils.import_utils import MISSING_NEMO_RUN_MSG
 

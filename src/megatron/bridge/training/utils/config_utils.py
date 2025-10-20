@@ -182,7 +182,7 @@ class _ConfigContainerBase:
         else:
             return value
 
-    def to_yaml(self, yaml_path: Optional[str] = None) -> None:
+    def to_yaml(self, yaml_path: str | None = None) -> None:
         """
         Save the config container to a YAML file.
 

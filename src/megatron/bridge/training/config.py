@@ -18,7 +18,7 @@ import signal
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
 from pathlib import Path
-from typing import Any, Literal, Tuple
+from typing import Any, Literal, tuple
 
 from megatron.core.datasets.gpt_dataset import GPTDatasetConfig as MCoreGPTDatasetConfig
 from megatron.core.distributed import DistributedDataParallelConfig as MCoreDistributedDataParallelConfig
@@ -265,7 +265,7 @@ class DatasetProvider(DataloaderConfig, ABC):
             data_prefix: str
             seq_length: int
 
-            def build_datasets(self, context: DatasetBuildContext) -> Tuple[Any | None, Any | None, Any | None]:
+            def build_datasets(self, context: DatasetBuildContext) -> tuple[Any | None, Any | None, Any | None]:
                 # Custom implementation to load data from S3
                 train_ds = load_s3_dataset(self.bucket_name, f"{self.data_prefix}/train", context.tokenizer)
                 valid_ds = load_s3_dataset(self.bucket_name, f"{self.data_prefix}/valid", context.tokenizer)
@@ -274,7 +274,7 @@ class DatasetProvider(DataloaderConfig, ABC):
     """
 
     @abstractmethod
-    def build_datasets(self, context: DatasetBuildContext) -> Tuple[Any | None, Any | None, Any | None]:
+    def build_datasets(self, context: DatasetBuildContext) -> tuple[Any | None, Any | None, Any | None]:
         """Build train, validation, and test datasets.
 
         This method is called by the framework during dataset initialization.

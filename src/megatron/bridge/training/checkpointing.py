@@ -378,7 +378,7 @@ def is_empty_async_queue(global_state: GlobalState) -> bool:
     return async_queue.get_num_unfinalized_calls() == 0
 
 
-def get_rng_state(data_parallel_random_init: bool, ckpt_format: str = "torch_dist") -> Union[ShardedObject, dict]:
+def get_rng_state(data_parallel_random_init: bool, ckpt_format: str = "torch_dist") -> ShardedObject | dict:
     """Get the random number generator states for all necessary libraries.
 
     Collects states from random, numpy, torch, cuda, and the Megatron RNG tracker.

@@ -17,7 +17,7 @@ Provider that builds conversation datasets from HuggingFace datasets.
 """
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Literal, Tuple
+from typing import Any, Callable, dict, list, Literal, tuple
 
 import torch
 from transformers import AutoProcessor
@@ -53,10 +53,10 @@ class HFDatasetConversationProvider(DatasetProvider):
     maker_name: str
 
     # Optional parameters forwarded to the selected maker
-    maker_kwargs: Dict[str, Any] | None = None
+    maker_kwargs: dict[str, Any] | None = None
 
     # Optional collate override. If None, inferred from processor type.
-    collate_impl: Callable[[list, Any], Dict[str, torch.Tensor]] | None = None
+    collate_impl: Callable[[list, Any], dict[str, torch.Tensor]] | None = None
 
     # Keep parity with GPTDatasetConfig usage in batching utilities
     skip_getting_attention_mask_from_dataset: bool = True
@@ -64,8 +64,8 @@ class HFDatasetConversationProvider(DatasetProvider):
     # DataloaderConfig fields are inherited (num_workers, dataloader_type, etc.)
     dataloader_type: Literal["single", "cyclic", "external"] | None = "single"
 
-    def _get_maker(self) -> Callable[..., List[Dict[str, Any]]]:
-        registry: Dict[str, Callable[..., List[Dict[str, Any]]]] = {
+    def _get_maker(self) -> Callable[..., list[dict[str, Any]]]:
+        registry: dict[str, Callable[..., list[dict[str, Any]]]] = {
             "make_rdr_dataset": make_rdr_dataset,
             "make_cord_v2_dataset": make_cord_v2_dataset,
             "make_medpix_dataset": make_medpix_dataset,
@@ -105,7 +105,7 @@ class HFDatasetConversationProvider(DatasetProvider):
             collate_impl=self.collate_impl,
         )
 
-    def build_datasets(self, context: DatasetBuildContext) -> Tuple[Any | None, Any | None, Any | None]:
+    def build_datasets(self, context: DatasetBuildContext) -> tuple[Any | None, Any | None, Any | None]:
         # Bind processor for the requested model
         processor = AutoProcessor.from_pretrained(self.hf_processor_path, trust_remote_code=True)
 

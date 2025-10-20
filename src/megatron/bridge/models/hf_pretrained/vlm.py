@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any, Dict, Generic, List, TypeVar
+from typing import Any, dict, Generic, list, TypeVar
 
 import torch
 from transformers import (
@@ -393,7 +393,7 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
             self._model.generation_config = value
 
     @property
-    def kwargs(self) -> Dict[str, Any]:
+    def kwargs(self) -> dict[str, Any]:
         """Additional initialization kwargs."""
         return self.init_kwargs
 
@@ -427,7 +427,7 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
             **kwargs,
         )
 
-    def generate(self, **kwargs) -> Union[torch.LongTensor, GenerateOutput]:
+    def generate(self, **kwargs) -> torch.LongTensor | GenerateOutput:
         """
         Generate sequences using the model.
 
@@ -443,7 +443,7 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
         """Forward pass through the model."""
         return self.model(*args, **kwargs)
 
-    def encode_text(self, text: Union[str, List[str]], **kwargs) -> Dict[str, torch.Tensor]:
+    def encode_text(self, text: str | list[str], **kwargs) -> dict[str, torch.Tensor]:
         """
         Encode text input using the tokenizer.
 
@@ -476,9 +476,9 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
     def process_images_and_text(
         self,
         images: Any | None = None,
-        text: str | List[str] | None = None,
+        text: str | list[str] | None = None,
         **kwargs,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """
         Process images and text together using the processor.
 
@@ -515,7 +515,7 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
         # Save artifacts through base class
         self.save_artifacts(save_path)
 
-    def to(self, device: Union[str, torch.device]) -> "PreTrainedVLM[VLMType]":
+    def to(self, device: str | torch.device) -> "PreTrainedVLM[VLMType]":
         """
         Move model to a device.
 
