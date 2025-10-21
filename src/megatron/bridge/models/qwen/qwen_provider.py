@@ -14,7 +14,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable, Optional, Union, List
 
 import torch
 import torch.nn.functional as F
@@ -401,3 +401,53 @@ class Qwen3MoEModelProvider235B_A22B(Qwen3MoEModelProvider):
     num_query_groups: int = 4
     ffn_hidden_size: int = 12288
     moe_ffn_hidden_size: int = 1536
+
+# =============================================================================
+# Qwen 3-Next MoE Model Provider (based on GPTProvider)
+# =============================================================================
+
+
+@dataclass
+class Qwen3NextMoEModelProvider(Qwen3MoEModelProvider):
+    """Base provider for Qwen 3 MoE Models."""
+
+    layernorm_zero_centered_gamma: bool = True # Zero-centered RMSNorm
+    kv_channels: Optional[int] = 256
+    num_query_groups: int = 2
+    seq_length: int = 262144 # 256k tokens
+    rotary_base: float = 10000000.0
+    rotary_percent: float = 0.25 # 25% of the hidden size is used for RoPE
+    attention_output_gate: bool = True # Gated Attention
+
+    # MoE specific parameters
+    num_moe_experts: int = 512
+    moe_router_topk: int = 10 # 10 routed experts per token
+    moe_token_dispatcher_type: str = "flex"
+    moe_shared_expert_gate: bool = True
+    moe_permute_fusion: bool = True
+    moe_router_fusion: bool = True
+    moe_enable_deepep: bool = True
+    moe_router_dtype: str = "fp32"
+
+    # Linear Attention specific parameters
+    linear_attention_type: str = "gated_delta_net" # Gated Delta Net used in 75% of the model layers
+    linear_attention_freq: Union[int, List[int]] = 4  # 1 gated standard attention layer per 4 layers
+    linear_conv_kernel_dim: int = 4
+    linear_key_head_dim: int = 128
+    linear_value_head_dim: int = 128
+    linear_num_key_heads: int = 16
+    linear_num_value_heads: int = 32
+
+@dataclass
+class Qwen3NextMoEModelProvider80B_A3B(Qwen3MoEModelProvider):
+    """
+    Provider for Qwen 3 Next 80B-A3B: https://huggingface.co/Qwen/Qwen3-Next-80B-A3B-Instruct and https://huggingface.co/Qwen/Qwen3-Next-80B-A3B-Thinking
+    """
+
+    num_layers: int = 48
+    hidden_size: int = 2048
+    num_attention_heads: int = 16
+    num_query_groups: int = 2
+    ffn_hidden_size: int = 5120
+    moe_ffn_hidden_size: int = 512
+    moe_shared_expert_intermediate_size: int = 512 
