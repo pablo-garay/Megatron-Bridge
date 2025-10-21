@@ -21,7 +21,6 @@ except ImportError as e:
 
 import os.path
 
-
 from megatron.core.transformer.module import MegatronModule
 from megatron.core.utils import unwrap_model
 

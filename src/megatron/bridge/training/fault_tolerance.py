@@ -53,7 +53,6 @@ import sys
 import threading
 import time
 
-
 import torch
 
 from megatron.bridge.training.config import ConfigContainer, FaultToleranceConfig

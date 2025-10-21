@@ -37,7 +37,7 @@ def model_config(
     tensor_parallelism: int = 1,
     pipeline_parallelism: int = 1,
     pipeline_parallelism_dtype: torch.dtype | None = None,
-    virtual_pipeline_parallelism:int | None = None,
+    virtual_pipeline_parallelism: int | None = None,
     context_parallelism: int = 1,
     sequence_parallelism: bool = False,
 ) -> MambaModelProvider130M:
@@ -80,7 +80,7 @@ def pretrain_config(
     tensor_parallelism: int = 1,
     pipeline_parallelism: int = 1,
     pipeline_parallelism_dtype: torch.dtype | None = None,
-    virtual_pipeline_parallelism:int | None = None,
+    virtual_pipeline_parallelism: int | None = None,
     context_parallelism: int = 1,
     sequence_parallelism: bool = False,
     # Training hyperparameters
@@ -91,7 +91,7 @@ def pretrain_config(
     lr: float = 3e-4,
     min_lr: float = 3e-5,
     lr_warmup_iters: int = 2000,
-    lr_decay_iters:int | None = None,
+    lr_decay_iters: int | None = None,
     # Precision recipe
     precision_config: MixedPrecisionConfig | str | None = "bf16_mixed",
     comm_overlap_config: CommOverlapConfig | None = None,

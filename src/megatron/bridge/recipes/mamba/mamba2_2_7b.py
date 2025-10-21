@@ -14,7 +14,6 @@
 
 import os
 
-
 import torch
 
 from megatron.bridge.models.mamba import MambaModelProvider2P7B

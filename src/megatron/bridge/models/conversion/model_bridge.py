@@ -19,10 +19,8 @@ import re
 from dataclasses import dataclass
 from typing import (
     Callable,
-    dict,
     Generic,
     Iterable,
-    list,
     Mapping,
     NamedTuple,
     Type,

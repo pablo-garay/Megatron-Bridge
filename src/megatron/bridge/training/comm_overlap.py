@@ -378,7 +378,7 @@ class CommOverlapConfig:
     """
 
     tp_comm_overlap: bool
-    tp_comm_overlap_cfg: TransformerLayerTPOverlapCfg |None = None
+    tp_comm_overlap_cfg: TransformerLayerTPOverlapCfg | None = None
     tp_comm_bootstrap_backend: str | None = None
     overlap_p2p_comm: bool | None = None
     batch_p2p_comm: bool | None = None

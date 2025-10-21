@@ -71,7 +71,7 @@ class LoRALinearSplitQKV(AdapterWrapper):
     class to provide a specific implementation of the forward method.
     """
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor | None:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor] | None:
         # pylint: disable=C0115,C0116
         linear_output, bias, layernorm_output = self.base_linear_forward(x)
         query = self.adapter.adapter_q(layernorm_output)
@@ -97,7 +97,7 @@ class LoRALinearSplitFC1UpGate(AdapterWrapper):
     class to provide a specific implementation of the forward method.
     """
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor | None:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor] | None:
         # pylint: disable=C0115,C0116
         linear_output, bias, layernorm_output = self.base_linear_forward(x)
         adapter_output_gate = self.adapter.adapter_gate(layernorm_output)

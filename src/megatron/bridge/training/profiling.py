@@ -14,7 +14,6 @@
 
 """Profiling utilities for training loop."""
 
-
 import torch
 import torch.profiler
 

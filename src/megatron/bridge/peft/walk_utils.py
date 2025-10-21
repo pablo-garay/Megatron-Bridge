@@ -52,7 +52,7 @@ class HasBool(Protocol):
 
 _TModule = TypeVar("_TModule", bound=nn.Module)
 ModuleFunc = Callable[[nn.Module], nn.Module]
-ModulePredicate = Callable[[nn.Module], bool |  HasBool]
+ModulePredicate = Callable[[nn.Module], bool | HasBool]
 
 
 def map(  # noqa: A001

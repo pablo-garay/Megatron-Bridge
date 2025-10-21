@@ -204,7 +204,7 @@ def load_model_config(
 def build_and_load_model(
     checkpoint_path: str,
     model_cfg: TransformerConfig,
-    model_type: Literal["gpt", "mamba"] None = None,
+    model_type: Literal["gpt", "mamba"] | None = None,
     megatron_args: argparse.Namespace | None = None,
     return_state_dict: bool = False,
     use_cpu_init: bool = False,

@@ -32,7 +32,8 @@ class TokenizerConfig:
     vocab_extra_ids: int = 0
     """Number of additional vocabulary tokens. They are used for span masking in the T5 model"""
 
-    tokenizer_type:Literal[
+    tokenizer_type: (
+        Literal[
             "BertWordPieceLowerCase",
             "BertWordPieceCase",
             "GPT2BPETokenizer",
@@ -43,7 +44,9 @@ class TokenizerConfig:
             "TikTokenizer",
             "MultimodalTokenizer",
             "NullTokenizer",
-        ] | None = None
+        ]
+        | None
+    ) = None
     """What type of tokenizer to use."""
 
     tokenizer_model: str | None = None

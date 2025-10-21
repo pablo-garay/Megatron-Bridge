@@ -14,7 +14,6 @@
 
 from dataclasses import dataclass, field
 
-
 from megatron.core.models.gpt import GPTModel as MCoreGPTModel
 from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VLVisionConfig
 

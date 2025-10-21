@@ -121,7 +121,7 @@ class GlobalState:
 
         self._cfg: ConfigContainer | None = None
         self._tokenizer: Any | None = None
-        self._tensorboard_logger: SummaryWriter | None  = None
+        self._tensorboard_logger: SummaryWriter | None = None
         self._wandb_logger: Any | None = None
         self._timers: Timers | None = None
         self._train_state: TrainState | None = None
