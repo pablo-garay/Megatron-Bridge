@@ -20,11 +20,10 @@ import torch
 import torch.nn.functional as F
 from PIL import Image  # noqa: F401  # may be used downstream by processors
 
-from megatron.bridge.data.vlm_datasets.token_utils import extract_skipped_token_ids
 from megatron.bridge.data.datasets.utils import (
-    _gather_assistant_text_segments,
     create_multiturn_loss_mask_by_search,
 )
+from megatron.bridge.data.vlm_datasets.token_utils import extract_skipped_token_ids
 from megatron.bridge.training.utils.visual_inputs import Qwen2_5_VLVisualInputs
 
 
