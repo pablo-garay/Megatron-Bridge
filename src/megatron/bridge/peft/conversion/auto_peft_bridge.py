@@ -14,10 +14,30 @@
 
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import torch
-from peft import PeftConfig
+
+
+# Make peft import optional
+try:
+    from peft import PeftConfig
+
+    _PEFT_AVAILABLE = True
+except ImportError:
+    _PEFT_AVAILABLE = False
+
+    # Create a dummy PeftConfig class that raises an error when used
+    class PeftConfig:  # type: ignore
+        """Dummy PeftConfig that raises an error when peft is not installed."""
+
+        @classmethod
+        def from_pretrained(cls, *args: Any, **kwargs: Any) -> Any:
+            raise ImportError(
+                "HuggingFace PEFT library is required to load adapters. "
+                "Please install it with: pip install megatron-bridge[peft]"
+            )
+
 
 from megatron.bridge.models.conversion.auto_bridge import AutoBridge
 from megatron.bridge.models.conversion.model_bridge import HFWeightTuple, WeightConversionTask
@@ -323,7 +343,13 @@ class AutoPEFTBridge:
     @classmethod
     def supports(cls, adapter_config: Dict) -> bool:
         """Check if this bridge supports the given adapter configuration."""
-        from peft import get_peft_config
+        try:
+            from peft import get_peft_config
+        except ImportError:
+            raise ImportError(
+                "HuggingFace PEFT library is required to check adapter support. "
+                "Please install it with: pip install megatron-bridge[peft]"
+            )
 
         from megatron.bridge.peft.conversion.peft_bridge import list_registered_bridges
 
