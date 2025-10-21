@@ -23,7 +23,10 @@ import torch
 from transformers import AutoTokenizer
 
 from megatron.bridge.data.llm_datasets.conversation_dataset import LLMConversationDataset
-from megatron.bridge.data.llm_datasets.hf_dataset_makers import make_openmathinstruct2_dataset
+from megatron.bridge.data.llm_datasets.hf_dataset_makers import (
+    make_openmathinstruct2_dataset,
+    make_squad_v2_dataset,
+)
 from megatron.bridge.training.config import DatasetBuildContext, DatasetProvider
 
 
@@ -58,9 +61,11 @@ class HFDatasetConversationLLMProvider(DatasetProvider):
     def _get_maker(self) -> Callable[..., List[Dict[str, Any]]]:
         registry: Dict[str, Callable[..., List[Dict[str, Any]]]] = {
             "make_openmathinstruct2_dataset": make_openmathinstruct2_dataset,
+            "make_squad_v2_dataset": make_squad_v2_dataset,
             # aliases
             "openmathinstruct2": make_openmathinstruct2_dataset,
             "omi2": make_openmathinstruct2_dataset,
+            "squad_v2": make_squad_v2_dataset,
         }
         if self.maker_name in registry:
             return registry[self.maker_name]
@@ -77,8 +82,18 @@ class HFDatasetConversationLLMProvider(DatasetProvider):
         maker = self._get_maker()
         kwargs = dict(self.maker_kwargs or {})
         kwargs.setdefault("split", split)
-        base_examples = maker(**kwargs)  # type: ignore[misc]
+        try:
+            base_examples = maker(**kwargs)  # type: ignore[misc]
+        except Exception:
+            # Some HF datasets do not provide non-train splits (e.g., test).
+            # Treat missing non-train splits as absent and return None.
+            if split != "train":
+                return None
+            raise
         if not isinstance(base_examples, list) or len(base_examples) == 0:
+            # Allow empty non-train splits by treating them as absent.
+            if split != "train":
+                return None
             raise ValueError(f"Maker '{self.maker_name}' returned no examples for split='{split}'")
         return LLMConversationDataset(
             base_examples=base_examples,
