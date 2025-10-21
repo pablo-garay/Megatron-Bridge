@@ -412,7 +412,7 @@ class Qwen3NextMoEModelProvider(Qwen3MoEModelProvider):
     """Base provider for Qwen 3 MoE Models."""
 
     layernorm_zero_centered_gamma: bool = True # Zero-centered RMSNorm
-    kv_channels: Optional[int] = 256
+    kv_channels: int | None = 256
     num_query_groups: int = 2
     seq_length: int = 262144 # 256k tokens
     rotary_base: float = 10000000.0
@@ -431,7 +431,7 @@ class Qwen3NextMoEModelProvider(Qwen3MoEModelProvider):
 
     # Linear Attention specific parameters
     linear_attention_type: str = "gated_delta_net" # Gated Delta Net used in 75% of the model layers
-    linear_attention_freq: Union[int, List[int]] = 4  # 1 gated standard attention layer per 4 layers
+    linear_attention_freq: int | list[int] = 4  # 1 gated standard attention layer per 4 layers
     linear_conv_kernel_dim: int = 4
     linear_key_head_dim: int = 128
     linear_value_head_dim: int = 128
@@ -439,7 +439,7 @@ class Qwen3NextMoEModelProvider(Qwen3MoEModelProvider):
     linear_num_value_heads: int = 32
 
 @dataclass
-class Qwen3NextMoEModelProvider80B_A3B(Qwen3MoEModelProvider):
+class Qwen3NextMoEModelProvider80B_A3B(Qwen3NextMoEModelProvider):
     """
     Provider for Qwen 3 Next 80B-A3B: https://huggingface.co/Qwen/Qwen3-Next-80B-A3B-Instruct and https://huggingface.co/Qwen/Qwen3-Next-80B-A3B-Thinking
     """
