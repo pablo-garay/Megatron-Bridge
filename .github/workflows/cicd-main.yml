@@ -29,6 +29,9 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  MAX_JOBS: 5
+
 jobs:
   pre-flight:
     uses: NVIDIA-NeMo/FW-CI-templates/.github/workflows/_cicd_preflight.yml@v0.64.2
@@ -101,7 +104,7 @@ jobs:
   cicd-functional-tests:
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: ${{ env.MAX_JOBS }}
       matrix:
         include:
           - script: L2_Launch_training
