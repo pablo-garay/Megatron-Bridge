@@ -14,8 +14,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Callable, Optional, Union, List
-
+from typing import Callable, Optional
 import torch
 import torch.nn.functional as F
 
@@ -422,6 +421,8 @@ class Qwen3NextMoEModelProvider(Qwen3MoEModelProvider):
     # MoE specific parameters
     num_moe_experts: int = 512
     moe_router_topk: int = 10 # 10 routed experts per token
+    moe_router_pre_softmax: bool = True # Qwen3-Next uses pre-softmax router with an additional normalization step after top-k selection
+    moe_router_norm_topk_prob: bool = True # Normalize the top-k probabilities after top-k selection
     moe_token_dispatcher_type: str = "flex"
     moe_shared_expert_gate: bool = True
     moe_permute_fusion: bool = True
@@ -450,4 +451,6 @@ class Qwen3NextMoEModelProvider80B_A3B(Qwen3NextMoEModelProvider):
     num_query_groups: int = 2
     ffn_hidden_size: int = 5120
     moe_ffn_hidden_size: int = 512
-    moe_shared_expert_intermediate_size: int = 512 
+    moe_shared_expert_intermediate_size: int = 512
+    mtp_num_layers: Optional[int] = None
+    mtp_loss_scaling_factor: Optional[float] = None
