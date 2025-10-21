@@ -17,7 +17,7 @@
 
 import dataclasses
 import functools
-from typing import Any, dict
+from typing import Any
 
 import pytest
 import torch

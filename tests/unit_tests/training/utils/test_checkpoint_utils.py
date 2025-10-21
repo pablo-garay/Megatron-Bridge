@@ -16,7 +16,7 @@ import os
 import threading
 import time
 from dataclasses import dataclass
-from typing import Any, dict
+from typing import Any
 from unittest.mock import mock_open, patch
 
 import pytest

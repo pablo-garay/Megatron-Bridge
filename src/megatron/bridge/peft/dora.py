@@ -14,7 +14,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from typing import list, Literal
+from typing import Literal
 
 from torch import nn
 

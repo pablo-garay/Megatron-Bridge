@@ -17,7 +17,7 @@ import os
 import warnings
 from dataclasses import dataclass, is_dataclass
 from dataclasses import fields as dataclass_fields
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Type, TypeVar
 
 import yaml
 from megatron.core.msc_utils import MultiStorageClientFeature

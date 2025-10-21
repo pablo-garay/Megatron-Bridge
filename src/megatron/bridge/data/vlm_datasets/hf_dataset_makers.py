@@ -19,7 +19,7 @@ conversation-style examples consumable by VLM processors.
 
 import json
 import random
-from typing import Any, dict, list
+from typing import Any
 
 from datasets import load_dataset
 

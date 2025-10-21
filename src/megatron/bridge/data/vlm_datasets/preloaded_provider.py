@@ -21,7 +21,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from typing import Any, dict, list, Literal, tuple
+from typing import Any, Literal
 
 from transformers import AutoProcessor
 

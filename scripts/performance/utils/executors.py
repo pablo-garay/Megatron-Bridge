@@ -15,7 +15,6 @@
 import os
 import sys
 from pathlib import Path
-from typing import dict, list
 
 import nemo_run as run
 from nemo_run.config import get_nemorun_home

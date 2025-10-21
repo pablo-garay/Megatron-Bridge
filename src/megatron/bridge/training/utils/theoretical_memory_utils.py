@@ -15,7 +15,6 @@
 """Computes theoretical memory footprint for model training."""
 
 import math
-from typing import Optional
 
 import torch.nn.functional as F
 

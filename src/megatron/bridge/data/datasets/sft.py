@@ -18,11 +18,7 @@ import math
 import os
 import re
 from pathlib import Path
-<<<<<<< HEAD
 from typing import Mapping
-=======
-from typing import list, Mapping
->>>>>>> ed7d868 (get rid of List, Tuple, Dict, Union, Optional)
 
 import datasets
 import numpy as np

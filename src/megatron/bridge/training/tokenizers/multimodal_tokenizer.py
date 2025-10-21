@@ -3,7 +3,6 @@
 """Multimodal tokenizer."""
 
 from dataclasses import dataclass
-from typing import dict, listn
 
 import numpy as np
 

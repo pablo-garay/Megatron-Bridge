@@ -14,7 +14,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from typing import list, Literal, tuple
+from typing import Literal
 
 import torch
 from megatron.core.dist_checkpointing.mapping import ShardedStateDict

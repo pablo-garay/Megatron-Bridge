@@ -15,7 +15,7 @@
 
 import sys
 from pathlib import Path
-from typing import dict, Generic, list, TypeVar
+from typing import Generic, TypeVar
 
 import torch
 from transformers import (

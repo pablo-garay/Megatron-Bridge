@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
-
 import torch
 from megatron.core.dist_checkpointing.mapping import ShardedStateDict
 from megatron.core.tensor_parallel import gather_from_tensor_model_parallel_region

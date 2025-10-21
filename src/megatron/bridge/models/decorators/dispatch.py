@@ -19,7 +19,7 @@ behavior for different types using the `impl` decorator.
 """
 
 from functools import _find_impl  # type: ignore
-from typing import Any, Callable, dict, TypeVar
+from typing import Any, Callable, TypeVar
 
 
 _SignatureType = TypeVar("_SignatureType", bound=Callable)

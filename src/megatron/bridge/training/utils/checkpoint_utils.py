@@ -16,7 +16,7 @@ import logging
 import os
 import sys
 from functools import lru_cache
-from typing import Any, Optional
+from typing import Any
 
 import torch
 import yaml

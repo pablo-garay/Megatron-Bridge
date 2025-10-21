@@ -50,7 +50,6 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import tuple
 
 import nemo_run as run
 

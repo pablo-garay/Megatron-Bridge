@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import types
-from typing import Optional
 
 import torch
 import transformers

@@ -23,11 +23,7 @@ import re
 import signal
 import time
 from functools import lru_cache, partial
-<<<<<<< HEAD
 from typing import Any, Callable, Type
-=======
-from typing import Any, Callable, list, Type
->>>>>>> ed7d868 (get rid of List, Tuple, Dict, Union, Optional)
 
 import numpy as np
 import torch

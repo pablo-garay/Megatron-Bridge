@@ -14,7 +14,6 @@
 
 import collections
 import logging
-from typing import dict, list, tuple
 
 import numpy as np
 from tqdm import tqdm

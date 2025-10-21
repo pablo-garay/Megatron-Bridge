@@ -52,7 +52,7 @@ import signal
 import sys
 import threading
 import time
-from typing import list
+
 
 import torch
 

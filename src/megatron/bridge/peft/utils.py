@@ -15,7 +15,7 @@
 import math
 import re
 from importlib.metadata import version
-from typing import Callable, dict, tuple
+from typing import Callable
 
 import packaging
 import torch

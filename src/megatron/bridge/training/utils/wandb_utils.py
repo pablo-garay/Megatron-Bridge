@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from megatron.bridge.utils.common_utils import print_rank_last
 

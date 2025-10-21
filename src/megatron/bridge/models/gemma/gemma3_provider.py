@@ -16,7 +16,7 @@ import copy
 import math
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Callable, tuple
+from typing import Callable
 
 import torch
 from megatron.core.activations import fast_gelu

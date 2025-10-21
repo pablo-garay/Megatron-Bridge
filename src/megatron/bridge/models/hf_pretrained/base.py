@@ -15,7 +15,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import ClassVar, dict, list
+from typing import ClassVar
 
 import torch
 from transformers import AutoConfig, PreTrainedModel

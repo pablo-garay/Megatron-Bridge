@@ -94,7 +94,6 @@ import argparse
 import importlib
 import os
 import sys
-from typing import Optional
 
 import torch
 import torch.distributed as dist

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import logging
-from typing import Any, dict
+from typing import Any
 
 from omegaconf import OmegaConf
 

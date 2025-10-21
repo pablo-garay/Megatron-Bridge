@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import re
-from typing import list
 
 from megatron.bridge.models.conversion.param_mapping import MegatronParamMapping
 

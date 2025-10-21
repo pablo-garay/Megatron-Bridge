@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any, dict, Generic, list, TypeVar
+from typing import Any, Generic, TypeVar
 
 import torch
 from transformers import (

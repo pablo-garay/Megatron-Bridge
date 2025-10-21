@@ -16,7 +16,7 @@ import json
 from dataclasses import fields as dataclass_fields
 from dataclasses import is_dataclass
 from pathlib import Path
-from typing import Any, dict, Literal, Protocol, Type, TypeVar, runtime_checkable
+from typing import Any, Literal, Protocol, Type, TypeVar, runtime_checkable
 
 import yaml
 from omegaconf import OmegaConf

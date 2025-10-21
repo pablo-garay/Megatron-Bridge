@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from dataclasses import fields
-from typing import Any, Callable, dict, Type
+from typing import Any, Callable, Type
 
 from megatron.core import mpu
 from megatron.core.datasets.blended_megatron_dataset_builder import BlendedMegatronDatasetBuilder

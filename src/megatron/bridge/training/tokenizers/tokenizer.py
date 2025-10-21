@@ -5,10 +5,6 @@
 import base64
 import json
 from pathlib import Path
-<<<<<<< HEAD
-=======
-from typing import dict, list
->>>>>>> ed7d868 (get rid of List, Tuple, Dict, Union, Optional)
 
 from megatron.bridge.training.tokenizers.bert_tokenization import FullTokenizer as FullBertTokenizer
 from megatron.bridge.training.tokenizers.config import TokenizerConfig

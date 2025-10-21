@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import list, tuple
+, tuple
 
 from megatron.bridge.data.loaders import get_blend_and_blend_per_split
 

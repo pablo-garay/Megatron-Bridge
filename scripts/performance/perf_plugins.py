@@ -30,7 +30,7 @@ use hydra-style overrides.
 import logging
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, list
+from typing import TYPE_CHECKING, Callable
 
 
 MISSING_NEMO_RUN_MSG = "nemo-run is not available. Please install it with `pip install nemo-run`."

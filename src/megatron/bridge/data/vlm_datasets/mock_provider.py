@@ -23,7 +23,7 @@ schema and optional `images` argument.
 """
 
 from dataclasses import dataclass
-from typing import Any, dict, list, Literal, tuple
+from typing import Any, Literal
 
 import numpy
 from PIL import Image

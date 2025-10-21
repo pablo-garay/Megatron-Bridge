@@ -50,11 +50,7 @@ If no converter is provided, the plugin will use the default hydra-style convert
 import logging
 import os
 from dataclasses import dataclass
-<<<<<<< HEAD
 from typing import TYPE_CHECKING, Callable
-=======
-from typing import TYPE_CHECKING, Callable, list
->>>>>>> ed7d868 (get rid of List, Tuple, Dict, Union, Optional)
 
 from megatron.bridge.utils.import_utils import MISSING_NEMO_RUN_MSG
 

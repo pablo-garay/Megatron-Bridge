@@ -19,7 +19,7 @@ import dataclasses
 import functools
 import inspect
 import logging
-from typing import Any, dict, tuple, TypeVar
+from typing import Any, TypeVar
 
 import torch
 from hydra._internal.config_loader_impl import ConfigLoaderImpl

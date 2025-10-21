@@ -14,7 +14,7 @@
 import warnings
 from dataclasses import dataclass, field
 from functools import partial
-from typing import TYPE_CHECKING, Callable, list
+from typing import TYPE_CHECKING, Callable
 
 import torch
 import torch.nn.functional as F

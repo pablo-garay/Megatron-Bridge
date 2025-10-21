@@ -16,7 +16,7 @@ import copy
 import functools
 import re
 import types
-from typing import Iterable, list, tuple
+from typing import Iterable
 
 import torch
 from megatron.core.transformer.module import MegatronModule

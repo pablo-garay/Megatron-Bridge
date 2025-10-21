@@ -20,7 +20,7 @@ except ImportError as e:
     raise ImportError('Required `"nvidia-modelopt[torch]"` is not installed!') from e
 
 import os.path
-from typing import list
+
 
 from megatron.core.transformer.module import MegatronModule
 from megatron.core.utils import unwrap_model

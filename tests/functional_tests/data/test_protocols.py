@@ -15,7 +15,7 @@
 """Unit tests for the custom dataset provider protocol."""
 
 from dataclasses import dataclass
-from typing import Any, tuple
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest

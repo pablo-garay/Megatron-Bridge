@@ -18,7 +18,7 @@ import signal
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields
 from pathlib import Path
-from typing import Any, Literal, tuple
+from typing import Any, Literal
 
 from megatron.core.datasets.gpt_dataset import GPTDatasetConfig as MCoreGPTDatasetConfig
 from megatron.core.distributed import DistributedDataParallelConfig as MCoreDistributedDataParallelConfig

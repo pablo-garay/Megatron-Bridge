@@ -16,7 +16,7 @@
 Core dataset types for conversation-style VLM examples.
 """
 
-from typing import Any, Callable, dict, list
+from typing import Any, Callable
 
 import torch
 

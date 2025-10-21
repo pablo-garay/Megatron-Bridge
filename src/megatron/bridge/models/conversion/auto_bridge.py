@@ -15,7 +15,7 @@
 import dataclasses
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Any, Generic, Iterable, list, Type, TypeVar
+from typing import Any, Generic, Iterable, Type, TypeVar
 
 import torch.distributed as dist
 import transformers

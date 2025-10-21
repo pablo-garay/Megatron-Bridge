@@ -14,7 +14,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Callable, list, Literal, tuple
+from typing import Callable, Literal
 
 import torch
 from megatron.core.models.gpt import GPTModel as MCoreGPTModel
