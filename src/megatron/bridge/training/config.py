@@ -301,7 +301,8 @@ class GPTDatasetConfig(MCoreGPTDatasetConfig, DataloaderConfig):
     This class inherits from MCore's GPTDatasetConfig and DataloaderConfig but defers the
     execution of post_init() until finalize() is explicitly called. This allows
     for field modifications after construction but before computed fields are calculated.
-    """ 
+    """
+
     seq_length: int
     """The sequence length."""
 
