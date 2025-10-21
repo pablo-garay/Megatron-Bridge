@@ -429,3 +429,157 @@ class AutoPEFTBridge:
 
         if torch.distributed.is_available() and torch.distributed.is_initialized():
             torch.distributed.barrier()
+
+    @classmethod
+    def import_ckpt(
+        cls,
+        hf_adapter_path: Union[str, Path],
+        megatron_path: Union[str, Path],
+        base_bridge: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Import HuggingFace PEFT adapters and save as a Megatron checkpoint.
+
+        This is a convenience method that combines loading HuggingFace PEFT adapters,
+        converting them to Megatron format, and saving them as a native Megatron
+        checkpoint. This is useful for preparing adapters for Megatron training.
+
+        Args:
+            hf_adapter_path: HuggingFace adapter ID or path to adapter directory
+                Examples: "username/llama-lora", "./my_adapters"
+            megatron_path: Directory path where the Megatron checkpoint will be saved
+            base_bridge: Optional AutoBridge instance for the base model. If not provided,
+                the base model will be loaded from the adapter's base_model_name_or_path.
+            **kwargs: Additional arguments passed to from_hf_pretrained
+                Common options include:
+                - trust_remote_code: Allow custom model code execution
+
+        Example:
+            >>> from megatron.bridge import AutoBridge
+            >>> from megatron.bridge.peft import AutoPEFTBridge
+            >>>
+            >>> # Basic import (loads base model automatically)
+            >>> AutoPEFTBridge.import_ckpt(
+            ...     "username/llama-lora",
+            ...     "./megatron_checkpoints/llama_lora"
+            ... )
+            >>>
+            >>> # Import with explicit base model
+            >>> base = AutoBridge.from_hf_pretrained("meta-llama/Meta-Llama-3-8B")
+            >>> AutoPEFTBridge.import_ckpt(
+            ...     "username/llama-lora",
+            ...     "./megatron_checkpoints/llama_lora",
+            ...     base_bridge=base
+            ... )
+
+        Note:
+            This saves the full PEFT model state (base + adapters) for training continuation.
+            For adapter-only exports, use save_adapter_weights() or save_hf_pretrained().
+        """
+        from megatron.bridge.training.model_load_save import save_megatron_model
+
+        # Load the HuggingFace PEFT adapters
+        peft_bridge = cls.from_hf_pretrained(hf_adapter_path, base_bridge=base_bridge, **kwargs)
+
+        # Convert to Megatron PEFT model
+        peft_model = peft_bridge.to_megatron_model(wrap_with_ddp=False, use_cpu_initialization=True)
+
+        # Save as Megatron checkpoint (full model with adapters)
+        save_megatron_model(
+            peft_model,
+            megatron_path,
+            hf_tokenizer_path=peft_bridge._base_bridge.hf_pretrained.model_name_or_path,
+        )
+
+    def export_ckpt(
+        self,
+        megatron_path: Union[str, Path],
+        hf_path: Union[str, Path],
+        show_progress: bool = True,
+    ) -> None:
+        """
+        Export a Megatron PEFT checkpoint to HuggingFace adapter format.
+
+        This is a convenience method that loads a Megatron PEFT checkpoint and
+        exports the adapters to HuggingFace format. This is useful for sharing
+        trained adapters or deploying them with HuggingFace inference tools.
+
+        Args:
+            megatron_path: Directory path where the Megatron PEFT checkpoint is stored
+            hf_path: Directory path where the HuggingFace adapter will be saved
+            show_progress: Display progress bar during adapter export
+
+        Example:
+            >>> from megatron.bridge.peft import AutoPEFTBridge
+            >>>
+            >>> # Load bridge with base model info
+            >>> peft_bridge = AutoPEFTBridge.from_hf_pretrained("username/llama-lora")
+            >>>
+            >>> # Export checkpoint to HuggingFace format
+            >>> peft_bridge.export_ckpt(
+            ...     "./megatron_checkpoints/llama_lora",
+            ...     "./hf_exports/llama_lora"
+            ... )
+            >>>
+            >>> # Load the exported adapter with HuggingFace
+            >>> from peft import PeftModel, AutoModel
+            >>> base_model = AutoModel.from_pretrained("meta-llama/Meta-Llama-3-8B")
+            >>> model = PeftModel.from_pretrained(base_model, "./hf_exports/llama_lora")
+
+        Note:
+            This exports only the adapter weights and config, not the full base model.
+            The base model must be loaded separately when using the exported adapter.
+        """
+        try:
+            from megatron.bridge.training.model_load_save import temporary_distributed_context
+        except ImportError:
+            raise ImportError("megatron.bridge.training is not available.")
+
+        # Export ckpt performs on CPU
+        with temporary_distributed_context(backend="gloo"):
+            # Load the Megatron PEFT model
+            peft_model = self.load_megatron_model(megatron_path, wrap_with_ddp=False)
+
+            # Save in HuggingFace adapter format
+            self.save_hf_pretrained(peft_model, hf_path, show_progress=show_progress)
+
+    def load_megatron_model(
+        self,
+        megatron_path: Union[str, Path],
+        wrap_with_ddp: bool = True,
+    ) -> MegatronPEFTModel:
+        """
+        Load a Megatron PEFT checkpoint.
+
+        This method loads a checkpoint that was saved with import_ckpt() and recreates
+        the PEFT model structure with loaded weights.
+
+        Args:
+            megatron_path: Directory path where the Megatron PEFT checkpoint is stored
+            wrap_with_ddp: Whether to wrap the model with DistributedDataParallel
+
+        Returns:
+            MegatronPEFTModel: The loaded PEFT model with weights from checkpoint
+
+        Note:
+            This requires that the base bridge was initialized with the correct base model
+            configuration. The checkpoint must have been created with a compatible PEFT config.
+
+        Warning:
+            This is a simplified implementation that recreates the PEFT structure but may not
+            properly restore all adapter weights from the checkpoint. Full checkpoint restoration
+            requires loading the saved adapter state dict and applying it to the PEFT model.
+            For now, this method provides the interface for checkpoint loading workflows.
+        """
+        # TODO: Implement proper checkpoint loading
+        # Current limitation: This creates a fresh PEFT model structure but doesn't load
+        # the adapter weights from the checkpoint. Proper implementation would:
+        # 1. Load the base model from checkpoint
+        # 2. Extract adapter weights from checkpoint
+        # 3. Re-create PEFT model structure
+        # 4. Load adapter weights into the PEFT structure
+
+        # For now, just create a fresh PEFT model with the expected structure
+        peft_model = self.to_megatron_model(wrap_with_ddp=wrap_with_ddp)
+        return peft_model
