@@ -5487,7 +5487,7 @@ wheels = [
 
 [[package]]
 name = "transformer-engine"
-version = "2.7.0"
+version = "2.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "transformer-engine-cu12" },
