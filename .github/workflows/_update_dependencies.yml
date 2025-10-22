@@ -39,7 +39,18 @@ jobs:
       SOURCE_BRANCH: ${{ needs.pre-flight.outputs.bump-branch }}
       TARGET_BRANCH: ${{ inputs.target-branch }}
     steps:
-      - name: Free up disk space
+      - name: Free up disk space (action)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Free up disk space (additional)
         run: |
           START_TIME=$(date +%s)
           echo "========================================="
@@ -81,6 +92,23 @@ jobs:
           time sudo rm -rf /usr/share/man/* /usr/share/doc/*
           echo "✓ Done"
           
+          echo "[8/8] Additional aggressive cleanup..."
+          # Remove more language runtimes
+          sudo rm -rf /opt/az
+          sudo rm -rf /usr/share/miniconda
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/node_modules
+          # Clean temp directories
+          sudo rm -rf /tmp/*
+          sudo rm -rf /var/tmp/*
+          # Clean system logs
+          sudo journalctl --vacuum-time=1s 2>/dev/null || true
+          sudo rm -rf /var/log/*
+          # Remove more caches
+          sudo rm -rf ~/.cache
+          sudo rm -rf /var/cache/*
+          echo "✓ Done"
+          
           END_TIME=$(date +%s)
           ELAPSED=$((END_TIME - START_TIME))
           echo ""
@@ -89,6 +117,8 @@ jobs:
           echo "========================================="
           echo "Disk space after cleanup:"
           df -h
+          echo "Disk inodes after cleanup:"
+          df -i
           echo ""
 
       - name: Checkout repo
@@ -97,18 +127,66 @@ jobs:
           ref: ${{ env.TARGET_BRANCH }}
           submodules: recursive
 
+      - name: Configure Docker for disk efficiency
+        run: |
+          # Configure Docker to use overlay2 with more efficient settings
+          sudo systemctl stop docker
+          sudo rm -rf /var/lib/docker
+          sudo mkdir -p /var/lib/docker
+          
+          # Create daemon config for efficiency
+          sudo tee /etc/docker/daemon.json > /dev/null <<EOF
+          {
+            "storage-driver": "overlay2",
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            }
+          }
+          EOF
+          
+          sudo systemctl start docker
+          echo "Docker configured for disk efficiency"
+
       - name: Build container
         env:
           GH_TOKEN: ${{ secrets.PAT }}
           DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: 10000000
+          BUILDKIT_STEP_LOG_MAX_SPEED: 10000000
         run: |
-          docker build -f docker/Dockerfile.ci --secret id=GH_TOKEN -t megatron-bridge .
+          echo "Disk space before Docker build:"
+          df -h
           
-          # Clean up dangling images after build
+          # Clean up any existing Docker data before building
+          docker system prune -af --volumes || true
+          
+          echo "Building container with BuildKit..."
+          docker build -f docker/Dockerfile.ci --secret id=GH_TOKEN -t megatron-bridge . 2>&1 | tee build.log || {
+            echo "❌ Build failed!"
+            echo "Disk space at failure:"
+            df -h
+            df -i
+            echo ""
+            echo "Docker disk usage:"
+            docker system df
+            echo ""
+            echo "Last 100 lines of build log:"
+            tail -100 build.log
+            exit 1
+          }
+          
+          echo "✅ Build successful!"
+          
+          # Clean up dangling images and build cache after build
           docker image prune -f
+          docker builder prune -af
           
           echo "Disk space after build:"
           df -h
+          echo "Docker disk usage:"
+          docker system df
 
       - name: Create bump branch if not exists
         run: |
