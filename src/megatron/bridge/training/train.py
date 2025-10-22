@@ -275,18 +275,9 @@ def train(
         num_microbatches = get_num_microbatches()
         update_num_microbatches(global_state.train_state.consumed_train_samples, consistency_check=True, verbose=True)
 
-        # TODO: implement dummy train_step to fast forward train_data_iterator.
         # Completely skip iteration if needed.
-        # if global_state.train_state.step in config.checkpoint.iterations_to_skip:
-        #     # Dummy train_step to fast forward train_data_iterator.
-        #     dummy_train_step(train_data_iterator)
-        #     global_state.train_state.step += 1
-        #     batch_size = (
-        #         parallel_state.get_data_parallel_world_size() * args.micro_batch_size * get_num_microbatches()
-        #     )
-        #     global_state.train_state.consumed_train_samples += batch_size
-        #     global_state.train_state.skipped_train_samples += batch_size
-        #     continue
+        if _should_skip_and_handle_iteration(global_state, train_data_iterator):
+            continue
 
         # Run training step.
         fault_tolerance.on_training_step_start(global_state)
@@ -531,16 +522,31 @@ def train_step(
             overlap_param_gather=cfg.ddp.overlap_param_gather,
         )
 
+        # Handle finetuning vs pretraining data consumption
+        seq_length = model_config.seq_length  # Default for pretraining
+        forward_backward_data_iterator = data_iterator  # Default for pretraining
+
+        if cfg.dataset.dataloader_type == "batch":
+            # Finetuning path to support variable-length sequences
+            from megatron.bridge.data.finetuning import prepare_finetuning_batch
+
+            forward_backward_data_iterator, seq_length = prepare_finetuning_batch(
+                data_iterator=data_iterator,
+                num_microbatches=get_num_microbatches(),
+                default_seq_length=model_config.seq_length,
+                seq_key="tokens",
+            )
+
         # Forward pass.
         forward_backward_func = get_forward_backward_func()
         losses_reduced = forward_backward_func(
             forward_step_func=forward_step_func,
-            data_iterator=data_iterator,
+            data_iterator=forward_backward_data_iterator,
             model=model,
             num_microbatches=get_num_microbatches(),
-            seq_length=model_config.seq_length,
+            seq_length=seq_length,
             micro_batch_size=train_config.micro_batch_size,
-            decoder_seq_length=model_config.seq_length,
+            decoder_seq_length=seq_length,
             forward_only=False,
         )
     should_checkpoint, should_exit, exit_code = rerun_state_machine.should_checkpoint_and_exit()
@@ -781,7 +787,7 @@ def compute_throughputs_and_append_to_progress_log(
         return
 
     # Compute job throughput.
-    # args.num_floating_point_operations_so_far keeps track of floating-point operations
+    # num_floating_point_operations_so_far keeps track of floating-point operations
     # completed at the start of job.
     job_throughput = (num_floating_point_operations_so_far - state.train_state.floating_point_operations_so_far) / (
         (time.time() - state.start_time) * 10**12 * get_world_size_safe()
@@ -1036,6 +1042,67 @@ def _finish_train(global_state: GlobalState):
         global_state.wandb_logger.finish()
 
     destroy_global_state()
+
+
+def _should_skip_and_handle_iteration(
+    global_state: GlobalState, train_data_iterator: Optional[Union[RerunDataIterator, list[RerunDataIterator]]]
+) -> bool:
+    """Check if the current iteration should be skipped and handle it if so.
+
+    This function checks if the current training step is in the iterations_to_skip list,
+    and if so, performs a dummy training step to consume data and update counters.
+
+    Args:
+        global_state: Global state containing training state and configuration
+        train_data_iterator: Iterator over training data
+
+    Returns:
+        bool: True if the iteration was skipped, False otherwise
+    """
+    cfg = global_state.cfg
+    if global_state.train_state.step not in cfg.train.iterations_to_skip:
+        return False
+
+    # Perform dummy train step to fast forward train_data_iterator
+    _dummy_train_step(global_state, train_data_iterator)
+
+    # Update step and sample counters
+    global_state.train_state.step += 1
+    batch_size = parallel_state.get_data_parallel_world_size() * cfg.train.micro_batch_size * get_num_microbatches()
+    global_state.train_state.consumed_train_samples += batch_size
+    global_state.train_state.skipped_train_samples += batch_size
+
+    return True
+
+
+def _dummy_train_step(
+    global_state: GlobalState, train_data_iterator: Optional[Union[RerunDataIterator, list[RerunDataIterator]]]
+) -> None:
+    """Single dummy training step to fast forward train_data_iterator.
+
+    This function consumes data from the iterator without performing any actual computation,
+    effectively skipping the iteration while maintaining data iterator consistency.
+
+    Advance the data iterator on first and last PP stages when data_iterator is not None.
+
+    Args:
+        global_state: Global state containing configuration
+        train_data_iterator: Iterator over training data
+    """
+    cfg = global_state.cfg
+    num_microbatches = get_num_microbatches()
+    rerun_state_machine = get_rerun_state_machine()
+
+    while rerun_state_machine.should_run_forward_backward(train_data_iterator):
+        if parallel_state.is_pipeline_first_stage() or parallel_state.is_pipeline_last_stage():
+            if train_data_iterator is not None:
+                if cfg.dataset.dataloader_type == "batch":
+                    # Finetuning: Consume global batch once
+                    _ = next(train_data_iterator)
+                else:
+                    # Pretrain: Consume microbatches one at a time
+                    for _ in range(num_microbatches):
+                        _ = next(train_data_iterator)
 
 
 def _handle_mxfp8_param_buffer_copy(
