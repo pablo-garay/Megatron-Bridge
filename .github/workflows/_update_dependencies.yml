@@ -184,9 +184,8 @@ jobs:
   auto-merge:
     needs: [create-pr, pre-flight]
     runs-on: ubuntu-latest
-    if: needs.create-pr.outputs.pr-number != ''
     env:
-      PR_NUMBER: ${{ needs.create-pr.outputs.pr-number }}
+      SOURCE_BRANCH: ${{ needs.pre-flight.outputs.bump-branch }}
       TARGET_BRANCH: ${{ inputs.target-branch }}
       GH_TOKEN: ${{ secrets.PAT }}
     steps:
@@ -195,7 +194,31 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
 
+      - name: Find PR number
+        id: find-pr
+        run: |
+          # First try to get PR number from previous job output
+          PR_NUMBER="${{ needs.create-pr.outputs.pr-number }}"
+          
+          # If not found, search for the PR by branch name
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "" ]; then
+            echo "⚠️ PR number not in output, searching by branch..."
+            PR_NUMBER=$(gh pr list --head "$SOURCE_BRANCH" --base "$TARGET_BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          fi
+          
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "" ]; then
+            echo "❌ No PR found for branch $SOURCE_BRANCH -> $TARGET_BRANCH"
+            echo "This likely means no changes were detected or the PR creation failed."
+            exit 0
+          fi
+          
+          echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "✅ Found PR #$PR_NUMBER"
+
       - name: Wait for CI checks and auto-merge
+        if: steps.find-pr.outputs.pr-number != ''
+        env:
+          PR_NUMBER: ${{ steps.find-pr.outputs.pr-number }}
         run: |
           echo "Monitoring PR #${PR_NUMBER} for CI check completion..."
           
