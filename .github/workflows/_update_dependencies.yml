@@ -41,55 +41,55 @@ jobs:
     steps:
       - name: Free up disk space
         run: |
-          START_TIME=$(date +%s)
-          echo "========================================="
-          echo "Starting disk cleanup at $(date)"
-          echo "========================================="
           echo "Disk space before cleanup:"
           df -h
-          echo ""
           
           # Remove unnecessary packages and files (~30GB)
-          echo "[1/7] Removing .NET runtime..."
-          time sudo rm -rf /usr/share/dotnet
-          echo "✓ Done"
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/lib/jvm
+          sudo rm -rf /usr/share/swift
           
-          echo "[2/7] Removing Android SDK..."
-          time sudo rm -rf /usr/local/lib/android
-          echo "✓ Done"
+          # Remove large packages (~5GB)
+          sudo apt-get remove -y '^aspnetcore-.*' || true
+          sudo apt-get remove -y '^dotnet-.*' || true
+          sudo apt-get remove -y '^llvm-.*' || true
+          sudo apt-get remove -y 'php.*' || true
+          sudo apt-get remove -y '^mongodb-.*' || true
+          sudo apt-get remove -y '^mysql-.*' || true
+          sudo apt-get remove -y azure-cli || true
+          sudo apt-get remove -y google-cloud-sdk || true
+          sudo apt-get remove -y google-chrome-stable || true
+          sudo apt-get remove -y firefox || true
+          sudo apt-get remove -y powershell || true
+          sudo apt-get remove -y mono-devel || true
+          sudo apt-get autoremove -y
+          sudo apt-get clean
           
-          echo "[3/7] Removing GHC, CodeQL, Boost, JVM, Swift..."
-          time sudo rm -rf /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/lib/jvm /usr/share/swift
-          echo "✓ Done"
+          # Clean up Docker (~3GB)
+          docker system prune -af --volumes
           
-          echo "[4/7] Removing large packages (databases, browsers, cloud tools)..."
-          time sudo apt-get remove -y '^aspnetcore-.*' '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' azure-cli google-cloud-sdk google-chrome-stable firefox powershell mono-devel 2>/dev/null || true
-          echo "  Running autoremove..."
-          time sudo apt-get autoremove -y
-          time sudo apt-get clean
-          echo "✓ Done"
+          # Clean up package manager caches
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /var/cache/apt/archives/*
           
-          echo "[5/7] Cleaning up Docker (images, containers, volumes)..."
-          time docker system prune -af --volumes
-          echo "✓ Done"
+          # Clean up pip cache
+          sudo rm -rf /root/.cache/pip
+          sudo rm -rf /home/runner/.cache/pip
           
-          echo "[6/7] Cleaning package manager caches..."
-          time sudo rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /root/.cache/pip /home/runner/.cache/pip /root/.npm /home/runner/.npm
-          echo "✓ Done"
+          # Clean up npm cache
+          sudo rm -rf /root/.npm
+          sudo rm -rf /home/runner/.npm
           
-          echo "[7/7] Removing documentation and man pages..."
-          time sudo rm -rf /usr/share/man/* /usr/share/doc/*
-          echo "✓ Done"
+          # Remove unnecessary man pages and docs
+          sudo rm -rf /usr/share/man/*
+          sudo rm -rf /usr/share/doc/*
           
-          END_TIME=$(date +%s)
-          ELAPSED=$((END_TIME - START_TIME))
-          echo ""
-          echo "========================================="
-          echo "Cleanup complete in ${ELAPSED} seconds!"
-          echo "========================================="
           echo "Disk space after cleanup:"
           df -h
-          echo ""
 
       - name: Checkout repo
         uses: actions/checkout@v4
