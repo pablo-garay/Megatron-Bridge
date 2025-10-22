@@ -219,6 +219,37 @@ jobs:
           megatron-bridge \
           bash -c 'uv lock --upgrade'
 
+      - name: Force lock file change for PR creation
+        run: |
+          # Add a comment with timestamp to uv.lock to ensure it's always modified
+          echo "# Last dependency check: $(date -u)" >> uv.lock
+          echo "✅ Added timestamp to uv.lock to ensure PR creation"
+
+      - name: Commit and push changes
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.signingkey ""
+          git config --global commit.gpgsign false
+          
+          # Configure remote URL with token
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          
+          # Stage all changes
+          git add -A
+          
+          # Commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(beep boop 🤖): Update dependencies and submodules"
+            git push origin $SOURCE_BRANCH
+            echo "✅ Changes committed and pushed to $SOURCE_BRANCH"
+          else
+            echo "⚠️ No changes to commit"
+          fi
+
       - name: Upload lock file
         uses: actions/upload-artifact@v4
         with:
