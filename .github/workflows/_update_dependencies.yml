@@ -95,6 +95,15 @@ jobs:
           megatron-bridge \
           bash -c 'uv lock --upgrade'
 
+<<<<<<< HEAD
+=======
+      - name: Force change for PR creation
+        run: |
+          # Create a timestamp file to ensure there's always a change to commit
+          echo "Last dependency check: $(date -u)" > .last-dependency-check
+          echo "✅ Created .last-dependency-check timestamp file to ensure PR creation"
+
+>>>>>>> 59ac7128 (temp:adjust for PR force creation)
       - name: Commit and push changes
         env:
           GH_TOKEN: ${{ secrets.PAT }}
