@@ -117,18 +117,6 @@ jobs:
           token: ${{ secrets.PAT }}
           ref: ${{ env.TARGET_BRANCH }}
 
-      - name: Install GPG
-        run: sudo apt-get install -y gnupg2
-
-      - name: Import GPG key (for signing)
-        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec
-        id: gpg-action
-        with:
-          gpg_private_key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PWD }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-
       - name: Create Bump PR
         uses: peter-evans/create-pull-request@v6
         id: create-pull-request
@@ -148,7 +136,6 @@ jobs:
             🤖 **Auto-merge enabled** - No manual action required if CI passes.
           commit-message: ${{ env.title }}
           signoff: true
-          committer: "${{ steps.gpg-action.outputs.name }} <${{ steps.gpg-action.outputs.email }}>"
 
   auto-merge:
     needs: [create-pr, pre-flight]
