@@ -227,11 +227,11 @@ jobs:
           megatron-bridge \
           bash -c 'uv lock --upgrade'
 
-      - name: Force lock file change for PR creation
+      - name: Force change for PR creation
         run: |
-          # Add a comment with timestamp to uv.lock to ensure it's always modified
-          echo "# Last dependency check: $(date -u)" >> uv.lock
-          echo "✅ Added timestamp to uv.lock to ensure PR creation"
+          # Create a timestamp file to ensure there's always a change to commit
+          echo "Last dependency check: $(date -u)" > .last-dependency-check
+          echo "✅ Created .last-dependency-check timestamp file to ensure PR creation"
 
       - name: Commit and push changes
         env:
