@@ -33,7 +33,7 @@ jobs:
 
   update-lockfile:
     environment: main
-    runs-on: ubuntu-latest
+    runs-on: linux-amd64-cpu16
     needs: [pre-flight]
     env:
       SOURCE_BRANCH: ${{ needs.pre-flight.outputs.bump-branch }}
