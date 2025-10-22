@@ -95,13 +95,18 @@ jobs:
           megatron-bridge \
           bash -c 'uv lock --upgrade || (echo "Lock file corrupted, regenerating..." && rm -f uv.lock && uv lock)'
 
-      - name: Force lock file change for PR creation
-        run: |
-          # Add a comment with timestamp to uv.lock to ensure it's always modified
-          echo "# Last dependency check: $(date -u)" >> uv.lock
-          echo "✅ Added timestamp to uv.lock to ensure PR creation"
+      - name: Install GPG
+        run: sudo apt-get install -y gnupg2
+      - name: Import GPG key (for signing)
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec
+        id: gpg-action
+        with:
+          gpg_private_key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PWD }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
 
-      - name: Commit and push changes
+      - name: Create Bump PR: Commit and push changes
         env:
           GH_TOKEN: ${{ secrets.PAT }}
         run: |
