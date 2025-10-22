@@ -5487,7 +5487,11 @@ wheels = [
 
 [[package]]
 name = "transformer-engine"
+<<<<<<< HEAD
 version = "2.7.0"
+=======
+version = "2.6.0"
+>>>>>>> parent of 9b28c052 (temp adjustment)
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "transformer-engine-cu12" },
