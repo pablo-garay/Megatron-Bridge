@@ -129,12 +129,7 @@ jobs:
 
       - name: Configure Docker for disk efficiency
         run: |
-          # Configure Docker to use overlay2 with more efficient settings
-          sudo systemctl stop docker
-          sudo rm -rf /var/lib/docker
-          sudo mkdir -p /var/lib/docker
-          
-          # Create daemon config for efficiency
+          # Just configure Docker settings without wiping everything
           sudo tee /etc/docker/daemon.json > /dev/null <<EOF
           {
             "storage-driver": "overlay2",
@@ -146,8 +141,12 @@ jobs:
           }
           EOF
           
-          sudo systemctl start docker
+          sudo systemctl restart docker
           echo "Docker configured for disk efficiency"
+          
+          # Wait for Docker to be ready
+          sleep 5
+          docker info
 
       - name: Build container
         env:
@@ -179,9 +178,18 @@ jobs:
           
           echo "✅ Build successful!"
           
-          # Clean up dangling images and build cache after build
+          # Verify the image exists
+          if docker images megatron-bridge --format "{{.Repository}}:{{.Tag}}" | grep -q "megatron-bridge"; then
+            echo "✅ Image megatron-bridge exists"
+            docker images megatron-bridge
+          else
+            echo "❌ ERROR: Image megatron-bridge was not created!"
+            docker images
+            exit 1
+          fi
+          
+          # Clean up dangling images (but keep our built image)
           docker image prune -f
-          docker builder prune -af
           
           echo "Disk space after build:"
           df -h
