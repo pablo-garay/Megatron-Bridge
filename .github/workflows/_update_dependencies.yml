@@ -39,6 +39,58 @@ jobs:
       SOURCE_BRANCH: ${{ needs.pre-flight.outputs.bump-branch }}
       TARGET_BRANCH: ${{ inputs.target-branch }}
     steps:
+      - name: Free up disk space
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+          
+          # Remove unnecessary packages and files (~30GB)
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/lib/jvm
+          sudo rm -rf /usr/share/swift
+          
+          # Remove large packages (~5GB)
+          sudo apt-get remove -y '^aspnetcore-.*' || true
+          sudo apt-get remove -y '^dotnet-.*' || true
+          sudo apt-get remove -y '^llvm-.*' || true
+          sudo apt-get remove -y 'php.*' || true
+          sudo apt-get remove -y '^mongodb-.*' || true
+          sudo apt-get remove -y '^mysql-.*' || true
+          sudo apt-get remove -y azure-cli || true
+          sudo apt-get remove -y google-cloud-sdk || true
+          sudo apt-get remove -y google-chrome-stable || true
+          sudo apt-get remove -y firefox || true
+          sudo apt-get remove -y powershell || true
+          sudo apt-get remove -y mono-devel || true
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          
+          # Clean up Docker (~3GB)
+          docker system prune -af --volumes
+          
+          # Clean up package manager caches
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /var/cache/apt/archives/*
+          
+          # Clean up pip cache
+          sudo rm -rf /root/.cache/pip
+          sudo rm -rf /home/runner/.cache/pip
+          
+          # Clean up npm cache
+          sudo rm -rf /root/.npm
+          sudo rm -rf /home/runner/.npm
+          
+          # Remove unnecessary man pages and docs
+          sudo rm -rf /usr/share/man/*
+          sudo rm -rf /usr/share/doc/*
+          
+          echo "Disk space after cleanup:"
+          df -h
+
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
@@ -48,8 +100,15 @@ jobs:
       - name: Build container
         env:
           GH_TOKEN: ${{ secrets.PAT }}
+          DOCKER_BUILDKIT: 1
         run: |
           docker build -f docker/Dockerfile.ci --secret id=GH_TOKEN -t megatron-bridge .
+          
+          # Clean up dangling images after build
+          docker image prune -f
+          
+          echo "Disk space after build:"
+          df -h
 
       - name: Create bump branch if not exists
         run: |
