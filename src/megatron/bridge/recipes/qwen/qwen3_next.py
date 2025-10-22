@@ -65,6 +65,9 @@ class Qwen3NextCommonKwargs(TypedDict, total=False):
     enable_recompute: bool
     account_for_embedding_in_pipeline_split: bool
     account_for_loss_in_pipeline_split: bool
+    # MTP support
+    mtp_num_layers: Optional[int]
+    mtp_loss_scaling_factor: Optional[float]
     # Training hyperparameters
     train_iters: int
     global_batch_size: int
@@ -80,7 +83,8 @@ class Qwen3NextCommonKwargs(TypedDict, total=False):
     # Precision / overlap configs
     precision_config: Optional[Union[MixedPrecisionConfig, str]]
     comm_overlap_config: Optional[CommOverlapConfig]
-
+    # Performance optimization knobs
+    enable_deepep: bool
 
 def qwen3_next_80b_a3b_pretrain_config(**user_kwargs: Unpack[Qwen3NextCommonKwargs]) -> ConfigContainer:
     """Return a pre-training config for Qwen3-Next 80B-A3B.
@@ -126,6 +130,9 @@ def _qwen3_next_common(
     enable_recompute: bool = False,
     account_for_embedding_in_pipeline_split: bool = False,
     account_for_loss_in_pipeline_split: bool = False,
+    # MTP support
+    mtp_num_layers: Optional[int] = 1,
+    mtp_loss_scaling_factor: Optional[float] = 0.1,
     # Training hyperparameters
     train_iters: int = 300000,
     global_batch_size: int = 32,
@@ -141,6 +148,7 @@ def _qwen3_next_common(
     # Precision recipe
     precision_config: Optional[Union[MixedPrecisionConfig, str]] = None,
     comm_overlap_config: Optional[CommOverlapConfig] = None,
+    enable_deepep: bool = False,
 ) -> ConfigContainer:
     """
     Create a pre-training configuration for Qwen3 MoE models using a given HuggingFace path.
@@ -213,6 +221,16 @@ def _qwen3_next_common(
         expert_model_parallel_size=expert_parallelism,
         expert_tensor_parallel_size=expert_tensor_parallelism,
     )
+    model_cfg.mtp_num_layers = 0 if mtp_num_layers is None else mtp_num_layers
+    model_cfg.mtp_loss_scaling_factor = mtp_loss_scaling_factor
+
+    # Performance optimization knobs
+    model_cfg.moe_permute_fusion = True
+    model_cfg.moe_router_fusion = True
+    if enable_deepep:
+        model_cfg.moe_token_dispatcher_type = "flex"
+        model_cfg.moe_enable_deepep = True
+        model_cfg.moe_shared_expert_overlap = False
 
     if precision_config is None:
         precision_config = bf16_mixed()

@@ -421,11 +421,7 @@ class Qwen3NextModelProvider(Qwen3MoEModelProvider):
     # MoE specific parameters
     num_moe_experts: int = 512
     moe_router_topk: int = 10 # 10 routed experts per token
-    moe_token_dispatcher_type: str = "flex"
-    moe_shared_expert_gate: bool = True
-    moe_permute_fusion: bool = True
-    moe_router_fusion: bool = True
-    moe_enable_deepep: bool = True
+    moe_shared_expert_gate: bool = True # Qwen3-Next uses a gate for the shared expert
     moe_router_dtype: str = "fp32"
 
     # Linear Attention specific parameters
