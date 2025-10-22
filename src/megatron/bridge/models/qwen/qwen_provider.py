@@ -407,7 +407,7 @@ class Qwen3MoEModelProvider235B_A22B(Qwen3MoEModelProvider):
 
 
 @dataclass
-class Qwen3NextMoEModelProvider(Qwen3MoEModelProvider):
+class Qwen3NextModelProvider(Qwen3MoEModelProvider):
     """Base provider for Qwen 3 MoE Models."""
 
     layernorm_zero_centered_gamma: bool = True # Zero-centered RMSNorm
@@ -421,8 +421,6 @@ class Qwen3NextMoEModelProvider(Qwen3MoEModelProvider):
     # MoE specific parameters
     num_moe_experts: int = 512
     moe_router_topk: int = 10 # 10 routed experts per token
-    moe_router_pre_softmax: bool = True # Qwen3-Next uses pre-softmax router with an additional normalization step after top-k selection
-    moe_router_norm_topk_prob: bool = True # Normalize the top-k probabilities after top-k selection
     moe_token_dispatcher_type: str = "flex"
     moe_shared_expert_gate: bool = True
     moe_permute_fusion: bool = True
@@ -440,7 +438,7 @@ class Qwen3NextMoEModelProvider(Qwen3MoEModelProvider):
     linear_num_value_heads: int = 32
 
 @dataclass
-class Qwen3NextMoEModelProvider80B_A3B(Qwen3NextMoEModelProvider):
+class Qwen3NextModelProvider80B_A3B(Qwen3NextModelProvider):
     """
     Provider for Qwen 3 Next 80B-A3B: https://huggingface.co/Qwen/Qwen3-Next-80B-A3B-Instruct and https://huggingface.co/Qwen/Qwen3-Next-80B-A3B-Thinking
     """
