@@ -225,7 +225,7 @@ jobs:
           -w /opt/Megatron-Bridge \
           -e GH_TOKEN=${{ secrets.PAT }} \
           megatron-bridge \
-          bash -c 'uv lock --upgrade'
+          bash -c 'uv lock --upgrade || (echo "Lock file corrupted, regenerating..." && rm -f uv.lock && uv lock)'
 
       - name: Force change for PR creation
         run: |
