@@ -398,9 +398,17 @@ jobs:
             TOTAL_CHECKS=$(echo "$STATUS_JSON" | jq '.statusCheckRollup | length')
             
             if [ "$TOTAL_CHECKS" -eq 0 ]; then
-              echo "No status checks found yet. Waiting..."
-              sleep 300
-              continue
+              # If no checks are required, merge immediately after a short wait
+              if [ "$ATTEMPT" -ge 3 ]; then
+                echo "✅ No CI checks configured. Auto-merging PR #${PR_NUMBER}..."
+                gh pr merge ${PR_NUMBER} --squash --delete-branch
+                echo "✅ PR #${PR_NUMBER} has been merged successfully!"
+                exit 0
+              else
+                echo "No status checks found yet. Waiting to see if checks appear..."
+                sleep 60
+                continue
+              fi
             fi
             
             PENDING_CHECKS=$(echo "$STATUS_JSON" | jq '[.statusCheckRollup[] | select(.conclusion == null or .conclusion == "" or .status == "IN_PROGRESS" or .status == "PENDING" or .status == "QUEUED")] | length')
@@ -421,8 +429,8 @@ jobs:
             if [ "$PENDING_CHECKS" -eq 0 ] && [ "$SUCCESS_CHECKS" -gt 0 ]; then
               echo "✅ All CI checks passed! Auto-merging PR #${PR_NUMBER}..."
               
-              # Merge the PR
-              gh pr merge ${PR_NUMBER} --squash --auto --delete-branch
+              # Merge the PR with squash
+              gh pr merge ${PR_NUMBER} --squash --delete-branch
               
               echo "✅ PR #${PR_NUMBER} has been merged successfully!"
               exit 0
