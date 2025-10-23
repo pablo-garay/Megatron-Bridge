@@ -218,7 +218,7 @@ jobs:
           bash -c 'uv lock --upgrade || (echo "Lock file corrupted, regenerating..." && rm -f uv.lock && uv lock)'
 
 
-      - name: Create Bump PR: Commit and push changes
+      - name: Create Bump PR Commit and push changes
         env:
           GH_TOKEN: ${{ secrets.PAT }}
         run: |
