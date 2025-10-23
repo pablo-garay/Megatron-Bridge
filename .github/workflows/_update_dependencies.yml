@@ -151,12 +151,6 @@ jobs:
             echo "⚠️ No changes to commit - this might prevent PR creation!"
           fi
 
-      - name: Upload lock file
-        uses: actions/upload-artifact@v4
-        with:
-          name: lock-file-${{ env.SOURCE_BRANCH }}
-          path: uv.lock
-
   create-pr:
     needs: [update-lockfile, pre-flight]
     runs-on: ubuntu-latest
