@@ -9,16 +9,6 @@ on:
     secrets:
       PAT:
         required: true
-      AZURE_CLIENT_ID:
-        required: true
-      AZURE_TENANT_ID:
-        required: true
-      AZURE_SUBSCRIPTION_ID:
-        required: true
-      SSH_KEY:
-        required: true
-      SSH_PWD:
-        required: true
 
 jobs:
   pre-flight:
@@ -33,24 +23,114 @@ jobs:
 
   update-lockfile:
     environment: main
-    runs-on: linux-amd64-cpu16
+    runs-on: ubuntu-latest
     needs: [pre-flight]
     env:
       SOURCE_BRANCH: ${{ needs.pre-flight.outputs.bump-branch }}
       TARGET_BRANCH: ${{ inputs.target-branch }}
     steps:
-      - name: Install Azure CLI
-        run: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
-      - name: Azure Login
-        uses: azure/login@v2
+      - name: Free up disk space (action)
+        uses: jlumbroso/free-disk-space@main
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
 
-      - name: Azure ACR Login
-        run: az acr login --name nemoci
+      - name: Free up disk space (additional)
+        run: |
+          START_TIME=$(date +%s)
+          echo "========================================="
+          echo "Starting disk cleanup at $(date)"
+          echo "========================================="
+          echo "Disk space before cleanup:"
+          df -h
+          echo ""
+          
+          # Remove unnecessary packages and files (~30GB)
+          echo "[1/8] Removing .NET runtime..."
+          time sudo rm -rf /usr/share/dotnet
+          echo "✓ Done"
+          
+          echo "[2/8] Removing Android SDK..."
+          time sudo rm -rf /usr/local/lib/android
+          echo "✓ Done"
+          
+          echo "[3/8] Removing GHC, CodeQL, Boost, JVM, Swift..."
+          time sudo rm -rf /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/lib/jvm /usr/share/swift
+          echo "✓ Done"
+          
+          echo "[4/8] Removing large packages (databases, browsers, cloud tools)..."
+          time sudo apt-get remove -y '^aspnetcore-.*' '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' azure-cli google-cloud-sdk google-chrome-stable firefox powershell mono-devel 2>/dev/null || true
+          echo "  Running autoremove..."
+          time sudo apt-get autoremove -y
+          time sudo apt-get clean
+          echo "✓ Done"
+          
+          echo "[5/8] Cleaning up Docker (images, containers, volumes)..."
+          time docker system prune -af --volumes
+          echo "✓ Done"
+          
+          echo "[6/8] Cleaning package manager caches..."
+          time sudo rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /root/.cache/pip /home/runner/.cache/pip /root/.npm /home/runner/.npm
+          echo "✓ Done"
+          
+          echo "[7/8] Removing documentation and man pages..."
+          time sudo rm -rf /usr/share/man/* /usr/share/doc/*
+          echo "✓ Done"
+          
+          echo "[8/8] Additional aggressive cleanup..."
+          # Remove more language runtimes
+          sudo rm -rf /opt/az
+          sudo rm -rf /usr/share/miniconda
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/node_modules
+          # Clean temp directories
+          sudo rm -rf /tmp/*
+          sudo rm -rf /var/tmp/*
+          # Clean system logs
+          sudo journalctl --vacuum-time=1s 2>/dev/null || true
+          sudo rm -rf /var/log/*
+          # Remove more caches
+          sudo rm -rf ~/.cache
+          sudo rm -rf /var/cache/*
+          echo "✓ Done"
+          
+          END_TIME=$(date +%s)
+          ELAPSED=$((END_TIME - START_TIME))
+          echo ""
+          echo "========================================="
+          echo "Cleanup complete in ${ELAPSED} seconds!"
+          echo "========================================="
+          echo "Disk space after cleanup:"
+          df -h
+          echo "Disk inodes after cleanup:"
+          df -i
+          echo ""
+
+      - name: Configure Docker for disk efficiency
+        run: |
+          # Just configure Docker settings without wiping everything
+          sudo tee /etc/docker/daemon.json > /dev/null <<EOF
+          {
+            "storage-driver": "overlay2",
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            }
+          }
+          EOF
+          
+          sudo systemctl restart docker
+          echo "Docker configured for disk efficiency"
+          
+          # Wait for Docker to be ready
+          sleep 5
+          docker info
 
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -61,8 +141,50 @@ jobs:
       - name: Build container
         env:
           GH_TOKEN: ${{ secrets.PAT }}
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: 10000000
+          BUILDKIT_STEP_LOG_MAX_SPEED: 10000000
         run: |
-          docker build -f docker/Dockerfile.ci --secret id=GH_TOKEN -t megatron-bridge .
+          echo "Disk space before Docker build:"
+          df -h
+          
+          # Clean up any existing Docker data before building
+          docker system prune -af --volumes || true
+          
+          echo "Building container with BuildKit..."
+          docker build -f docker/Dockerfile.ci --secret id=GH_TOKEN -t megatron-bridge . 2>&1 | tee build.log || {
+            echo "❌ Build failed!"
+            echo "Disk space at failure:"
+            df -h
+            df -i
+            echo ""
+            echo "Docker disk usage:"
+            docker system df
+            echo ""
+            echo "Last 100 lines of build log:"
+            tail -100 build.log
+            exit 1
+          }
+          
+          echo "✅ Build successful!"
+          
+          # Verify the image exists
+          if docker images megatron-bridge --format "{{.Repository}}:{{.Tag}}" | grep -q "megatron-bridge"; then
+            echo "✅ Image megatron-bridge exists"
+            docker images megatron-bridge
+          else
+            echo "❌ ERROR: Image megatron-bridge was not created!"
+            docker images
+            exit 1
+          fi
+          
+          # Clean up dangling images (but keep our built image)
+          docker image prune -f
+          
+          echo "Disk space after build:"
+          df -h
+          echo "Docker disk usage:"
+          docker system df
 
       - name: Create bump branch if not exists
         run: |
@@ -95,17 +217,6 @@ jobs:
           megatron-bridge \
           bash -c 'uv lock --upgrade || (echo "Lock file corrupted, regenerating..." && rm -f uv.lock && uv lock)'
 
-      - name: Install GPG
-        run: sudo apt-get install -y gnupg2
-
-      - name: Import GPG key (for signing)
-        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec
-        id: gpg-action
-        with:
-          gpg_private_key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PWD }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
 
       - name: Create Bump PR: Commit and push changes
         env:
